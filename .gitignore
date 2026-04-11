@@ -34,3 +34,7 @@ reports/figures/**
 !reports/figures/.gitkeep
 reports/error_cases/**
 !reports/error_cases/.gitkeep
+models/**
+!models/
+!models/retriever/
+!models/retriever/download.py

@@ -10,4 +10,5 @@ top_k: 10
 whether_rerank: true
 whether_regression: false
 whether_process_extension: false
+rerank_top_k: 10
 smoke_test: true

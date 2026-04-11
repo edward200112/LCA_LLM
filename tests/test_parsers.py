@@ -126,13 +126,69 @@ def test_smoke_pipeline_cli(tmp_path: Path) -> None:
             sys.executable,
             str(project_root / "scripts" / "02_make_splits.py"),
             "--input_products",
-            str(out_dir / "products.parquet"),
+            str(out_dir / "products_with_targets.parquet"),
             "--split_type",
             "cluster_ood",
             "--seed",
             "13",
             "--out_dir",
             str(split_dir),
+        ],
+        check=True,
+    )
+    pred_dir = tmp_path / "predictions"
+    metrics_dir = tmp_path / "metrics"
+    subprocess.run(
+        [
+            sys.executable,
+            str(project_root / "scripts" / "03_train_baselines.py"),
+            "--train_path",
+            str(split_dir / "cluster_ood_train.parquet"),
+            "--dev_path",
+            str(split_dir / "cluster_ood_dev.parquet"),
+            "--corpus_path",
+            str(out_dir / "naics_corpus.parquet"),
+            "--model",
+            "bm25",
+            "--config",
+            str(project_root / "configs" / "model" / "bm25.yaml"),
+            "--output_dir",
+            str(pred_dir),
+            "--seed",
+            "13",
+        ],
+        check=True,
+    )
+    subprocess.run(
+        [
+            sys.executable,
+            str(project_root / "scripts" / "08_predict_all.py"),
+            "--split_path",
+            str(split_dir / "cluster_ood_dev.parquet"),
+            "--corpus_path",
+            str(out_dir / "naics_corpus.parquet"),
+            "--retriever_ckpt",
+            str(pred_dir / "retrieval_topk_dev_bm25.jsonl"),
+            "--config",
+            str(project_root / "configs" / "exp" / "regression.yaml"),
+            "--output_dir",
+            str(pred_dir),
+        ],
+        check=True,
+        cwd=str(project_root),
+    )
+    subprocess.run(
+        [
+            sys.executable,
+            str(project_root / "scripts" / "09_evaluate_all.py"),
+            "--pred_dir",
+            str(pred_dir),
+            "--gold_path",
+            str(split_dir / "cluster_ood_dev.parquet"),
+            "--config",
+            str(project_root / "configs" / "exp" / "regression.yaml"),
+            "--output_dir",
+            str(metrics_dir),
         ],
         check=True,
     )
@@ -143,3 +199,8 @@ def test_smoke_pipeline_cli(tmp_path: Path) -> None:
     assert (split_dir / "cluster_ood_train.parquet").exists()
     assert (split_dir / "cluster_ood_dev.parquet").exists()
     assert (split_dir / "cluster_ood_test.parquet").exists()
+    assert (pred_dir / "retrieval_topk_dev_bm25.jsonl").exists()
+    assert (pred_dir / "regression_preds_cluster_ood_dev_top1_factor_lookup.parquet").exists()
+    assert (pred_dir / "regression_preds_cluster_ood_dev_topk_factor_mixture.parquet").exists()
+    assert (metrics_dir / "retrieval_metrics_dev_bm25.json").exists()
+    assert (metrics_dir / "regression_metrics_cluster_ood_dev_top1_factor_lookup.json").exists()

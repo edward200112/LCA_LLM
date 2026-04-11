@@ -1,4 +1,5 @@
 name: "lightgbm"
 pca_dim: 64
 quantiles: [0.1, 0.5, 0.9]
+top_k: 5
 smoke_test: true

@@ -44,6 +44,12 @@ source .venv/bin/activate
 python scripts/00_download_data.py --target all --out_dir data/raw --overwrite
 ```
 
+如需提前缓存开源检索模型到本地目录，可选使用：
+
+```bash
+python models/retriever/download.py --model all --output_dir models/retriever/checkpoints
+```
+
 ## 一键运行 smoke test
 
 ```bash
@@ -58,6 +64,8 @@ make smoke-test
 - 检索指标与回归指标
 - RRF 融合
 - top-k factor mixture 基线
+- process extension 审阅包导出
+- report tables / figures 导出
 
 ## 一键运行完整实验
 
@@ -77,6 +85,21 @@ python scripts/02_make_splits.py \
   --split_type random_stratified \
   --seed 13 \
   --out_dir data/splits
+
+python scripts/13_run_full_pipeline.py \
+  --exp_config configs/exp/full.yaml \
+  --seed 13 \
+  --output_dir reports/full_pipeline
+```
+
+如需只检查全链路编排而不真正执行：
+
+```bash
+python scripts/13_run_full_pipeline.py \
+  --exp_config configs/exp/smoke_full.yaml \
+  --seed 13 \
+  --output_dir reports/smoke_pipeline \
+  --dry_run
 ```
 
 ## 如何复现论文表格和图
@@ -89,7 +112,9 @@ python scripts/02_make_splits.py \
 python scripts/12_export_paper_tables.py \
   --metrics_dir reports/metrics \
   --output_dir reports/tables \
-  --format both
+  --format both \
+  --pred_dir data/predictions \
+  --products_path data/processed/products_with_targets.parquet
 ```
 
 ## 可选扩展
@@ -120,12 +145,14 @@ python scripts/12_export_paper_tables.py \
 - 数据 schema 与 parser 初版
 - 可运行 smoke test
 - README 初稿
-
-后续将按以下顺序补齐：
-
-1. 下载、解析、切分
-2. BM25、dense zero-shot、top-1 factor baseline
-3. dense fine-tune
-4. hybrid 和 rerank
-5. regression 和 uncertainty
-6. process extension 与论文导出
+- BM25 / TF-IDF / lexical baseline
+- dense zero-shot baseline 接口
+- top-1 factor lookup 与 top-k factor mixture 基线预测
+- dense fine-tune 训练脚本，默认使用 `MultipleNegativesRankingLoss`
+- hard negatives 优先通过同 4 位 / 2 位父类分桶实现 in-batch negatives
+- hybrid RRF 融合脚本
+- cross-encoder rerank 训练与推理脚本
+- LightGBM quantile regressor 训练与推理脚本
+- conformal interval、classification confidence 与 abstention 评估
+- ablation runner
+- full pipeline runner

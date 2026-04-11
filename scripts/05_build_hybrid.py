@@ -31,6 +31,10 @@ def main() -> None:
 
     fused = []
     for left, right in zip(bm25_run, dense_run, strict=False):
+        if str(left.get("product_id")) != str(right.get("product_id")):
+            raise RuntimeError(
+                f"Run alignment error: product_id mismatch {left.get('product_id')} vs {right.get('product_id')}"
+            )
         fused.append(
             {
                 "product_id": left["product_id"],
@@ -44,7 +48,7 @@ def main() -> None:
         )
     output_path = Path(args.output_path)
     write_jsonl(fused, output_path)
-    log_final_metrics(logger, {"queries": len(fused)})
+    log_final_metrics(logger, {"queries": len(fused), "fusion": args.fusion, "top_k": args.topk})
 
 
 if __name__ == "__main__":

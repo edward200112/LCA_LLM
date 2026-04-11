@@ -1,8 +1,8 @@
-name: "full_experiment"
+name: "smoke_full_pipeline"
 seed: 13
-seeds: [13, 42, 3407]
-model_name: "multilingual-e5-base"
-dense_encoder_name: "intfloat/multilingual-e5-base"
+seeds: [13]
+model_name: "all-MiniLM-L6-v2"
+dense_encoder_name: "sentence-transformers/all-MiniLM-L6-v2"
 retrieval_mode: "hybrid"
 split_type: "random_stratified"
 splits_dir: "data/splits"
@@ -10,23 +10,23 @@ processed_dir: "data/processed"
 corpus_path: "data/processed/naics_corpus.parquet"
 uslci_path: "data/processed/uslci_processes.parquet"
 process_retriever: "bm25"
-process_top_k: 10
+process_top_k: 5
 process_prefilter_by_naics: false
 rerank_base_model: "cross-encoder/ms-marco-MiniLM-L-6-v2"
-batch_size: 32
-max_length: 256
+batch_size: 4
+max_length: 128
 learning_rate: 2.0e-5
-epochs: 3
-top_k: 50
-whether_rerank: true
+epochs: 1
+top_k: 10
+whether_rerank: false
 whether_regression: true
-whether_process_extension: true
+whether_process_extension: false
 whether_uncertainty: true
 use_hierarchy_features: true
-rerank_top_k: 10
+rerank_top_k: 5
 epa_factors_path: "data/processed/epa_factors.parquet"
 factor_baselines: ["top1_factor_lookup", "topk_factor_mixture"]
-regression_top_k: 10
-pca_dim: 64
+regression_top_k: 5
+pca_dim: 16
 quantiles: [0.1, 0.5, 0.9]
-smoke_test: false
+smoke_test: true

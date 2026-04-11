@@ -4,4 +4,5 @@ max_length: 256
 learning_rate: 2.0e-5
 epochs: 1
 top_k: 10
+loss: "BCEWithLogitsLoss"
 smoke_test: true

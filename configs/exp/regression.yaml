@@ -10,4 +10,7 @@ top_k: 10
 whether_rerank: false
 whether_regression: true
 whether_process_extension: false
+epa_factors_path: "data/processed/epa_factors.parquet"
+factor_baselines: ["top1_factor_lookup", "topk_factor_mixture"]
+regression_top_k: 5
 smoke_test: true

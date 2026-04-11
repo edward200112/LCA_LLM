@@ -22,9 +22,10 @@ def calibration_error(frame: pd.DataFrame, confidence_col: str, correctness_col:
 
 def evaluate_uncertainty(frame: pd.DataFrame) -> dict[str, float]:
     curve = risk_coverage_curve(frame, "confidence", "error")
+    calibration_target = 1.0 - frame["error"].rank(pct=True)
     return {
         "empirical_coverage": empirical_coverage(frame, "y_true", "lower", "upper"),
         "average_interval_width": average_interval_width(frame, "lower", "upper"),
-        "calibration_error": calibration_error(frame, "confidence", "correct"),
+        "calibration_error": float((frame["confidence"] - calibration_target).abs().mean()),
         "abstention_gain": float(curve["retained_risk"].iloc[0] - curve["retained_risk"].iloc[-1]),
     }

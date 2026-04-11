@@ -4,4 +4,7 @@ max_length: 256
 learning_rate: 2.0e-5
 epochs: 1
 top_k: 50
+index_dir: "data/indices/dense_e5"
+loss: "MultipleNegativesRankingLoss"
+hard_negative_priority: ["4_digit", "2_digit"]
 smoke_test: true

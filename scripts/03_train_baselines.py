@@ -10,10 +10,10 @@ from open_match_lca.io_utils import load_yaml, require_exists, write_jsonl
 from open_match_lca.logging_utils import log_final_metrics, setup_run_logger
 from open_match_lca.retrieval.candidate_generation import (
     bm25_retrieve,
+    dense_zero_shot_retrieve,
     exact_or_lexical_retrieve,
     tfidf_retrieve,
 )
-from open_match_lca.retrieval.dense_retriever import raise_dense_not_ready
 from open_match_lca.seed import seed_everything
 
 
@@ -39,6 +39,9 @@ def main() -> None:
     dev = pd.read_parquet(require_exists(Path(args.dev_path)))
     corpus = pd.read_parquet(require_exists(Path(args.corpus_path)))
     top_k = int(config.get("top_k", 10))
+    batch_size = int(config.get("batch_size", 16))
+    encoder_name = str(config.get("name", "all-MiniLM-L6-v2"))
+    index_dir = config.get("index_dir")
 
     if args.model == "exact":
         runs = exact_or_lexical_retrieve(dev, corpus, top_k=top_k)
@@ -47,13 +50,19 @@ def main() -> None:
     elif args.model == "bm25":
         runs = bm25_retrieve(dev, corpus, top_k=top_k)
     else:
-        raise_dense_not_ready()
-        return
+        runs = dense_zero_shot_retrieve(
+            dev,
+            corpus,
+            top_k=top_k,
+            encoder_name=encoder_name,
+            batch_size=batch_size,
+            index_dir=None if index_dir is None else str(index_dir),
+        )
 
     output_path = Path(args.output_dir) / f"retrieval_topk_dev_{args.model}.jsonl"
     write_jsonl(runs, output_path)
     logger.info("baseline_run_saved", extra={"structured": {"output_path": str(output_path)}})
-    log_final_metrics(logger, {"queries": len(runs)})
+    log_final_metrics(logger, {"queries": len(runs), "model": args.model, "top_k": top_k})
 
 
 if __name__ == "__main__":
