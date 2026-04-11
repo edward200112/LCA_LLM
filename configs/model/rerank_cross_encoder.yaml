@@ -1,0 +1,7 @@
+name: "cross-encoder/ms-marco-MiniLM-L-6-v2"
+batch_size: 8
+max_length: 256
+learning_rate: 2.0e-5
+epochs: 1
+top_k: 10
+smoke_test: true

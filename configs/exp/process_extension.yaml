@@ -1,0 +1,13 @@
+name: "process_extension_smoke"
+seed: 13
+seeds: [13]
+model_name: "uslci_retrieval"
+batch_size: 8
+max_length: 128
+learning_rate: 2.0e-5
+epochs: 1
+top_k: 10
+whether_rerank: false
+whether_regression: false
+whether_process_extension: true
+smoke_test: true

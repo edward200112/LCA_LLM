@@ -1,0 +1,10 @@
+classification:
+  use_top1_probability: true
+  use_margin: true
+  use_entropy: true
+regression:
+  use_quantile_interval: true
+  use_conformal: true
+abstention:
+  enabled: true
+smoke_test: true

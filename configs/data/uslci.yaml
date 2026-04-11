@@ -1,0 +1,5 @@
+dataset_version: "scaffold-v0"
+uslci_output: "data/processed/uslci_processes.parquet"
+summary_output: "data/reports_cache/uslci_summary.json"
+smoke_test: true
+optional_extension: true

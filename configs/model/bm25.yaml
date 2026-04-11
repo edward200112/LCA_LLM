@@ -1,0 +1,4 @@
+name: "bm25"
+top_k: 50
+tokenizer: "whitespace"
+smoke_test: true

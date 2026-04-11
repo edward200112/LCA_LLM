@@ -1,0 +1,9 @@
+dataset_version: "scaffold-v0"
+products_output: "data/processed/products.parquet"
+epa_output: "data/processed/epa_factors.parquet"
+naics_output: "data/processed/naics_corpus.parquet"
+summary_output: "data/reports_cache/data_summary.json"
+smoke_test: true
+text_separator: " [SEP] "
+deduplicate_exact_text: true
+default_label_confidence: 1.0

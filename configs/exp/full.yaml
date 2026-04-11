@@ -1,0 +1,13 @@
+name: "full_experiment"
+seed: 13
+seeds: [13, 42, 3407]
+model_name: "multilingual-e5-base"
+batch_size: 32
+max_length: 256
+learning_rate: 2.0e-5
+epochs: 3
+top_k: 50
+whether_rerank: true
+whether_regression: true
+whether_process_extension: true
+smoke_test: false
