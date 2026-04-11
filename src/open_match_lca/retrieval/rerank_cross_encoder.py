@@ -7,8 +7,11 @@ from typing import Protocol
 import numpy as np
 import pandas as pd
 from torch.utils.data import DataLoader
+from tqdm.auto import tqdm
 
+from open_match_lca.eval.eval_retrieval import compute_retrieval_metrics
 from open_match_lca.io_utils import dump_json, ensure_directory, read_jsonl, write_jsonl, write_parquet
+from open_match_lca.torch_utils import resolve_torch_device
 
 try:
     from sentence_transformers import InputExample
@@ -115,6 +118,45 @@ def _build_input_examples(frame: pd.DataFrame) -> list[InputExample]:
     ]
 
 
+def scored_pairs_to_retrieval_records(
+    scored_pairs: pd.DataFrame,
+    top_k: int,
+    score_column: str = "rerank_score",
+) -> list[dict]:
+    required = {"product_id", "gold_naics_code", "query_text", "naics_code", score_column}
+    missing = sorted(required - set(scored_pairs.columns))
+    if missing:
+        raise ValueError(
+            f"Scored reranker pairs are missing required columns: {missing}. "
+            f"Available columns: {list(scored_pairs.columns)}"
+        )
+    records: list[dict] = []
+    grouped = scored_pairs.groupby(["product_id", "gold_naics_code", "query_text"], sort=False)
+    for (product_id, gold_naics_code, query_text), group in grouped:
+        sorted_group = group.sort_values(
+            by=[score_column, "initial_score"],
+            ascending=[False, False],
+        ).head(top_k)
+        candidates = [
+            {
+                "candidate_id": getattr(row, "candidate_id", row.naics_code),
+                "naics_code": str(row.naics_code),
+                "score": float(getattr(row, "initial_score", 0.0)),
+                "rerank_score": float(getattr(row, score_column)),
+            }
+            for row in sorted_group.itertuples(index=False)
+        ]
+        records.append(
+            {
+                "product_id": product_id,
+                "gold_naics_code": gold_naics_code,
+                "query_text": query_text,
+                "candidates": candidates,
+            }
+        )
+    return records
+
+
 def train_cross_encoder_reranker(
     train_pairs: pd.DataFrame,
     dev_pairs: pd.DataFrame,
@@ -124,6 +166,9 @@ def train_cross_encoder_reranker(
     epochs: int,
     learning_rate: float,
     max_length: int,
+    top_k: int = 10,
+    device: str | None = None,
+    logger: "Logger" | None = None,
 ) -> RerankerArtifacts:
     if CrossEncoder is None:  # pragma: no cover
         raise RuntimeError(
@@ -137,30 +182,58 @@ def train_cross_encoder_reranker(
     output_root = Path(output_dir)
     ensure_directory(output_root)
     model_dir = output_root / "reranker_model"
+    resolved_device = resolve_torch_device(device)
 
     train_loader = DataLoader(
         _build_input_examples(train_pairs),
         batch_size=batch_size,
         shuffle=True,
     )
-    model = CrossEncoder(base_model, num_labels=1, max_length=max_length)
-    warmup_steps = max(0, int(len(train_loader) * max(epochs, 1) * 0.1))
-    model.fit(
-        train_dataloader=train_loader,
-        epochs=epochs,
-        warmup_steps=warmup_steps,
-        optimizer_params={"lr": learning_rate},
-        output_path=str(model_dir),
-        save_best_model=False,
-        show_progress_bar=False,
-    )
+    model = CrossEncoder(base_model, num_labels=1, max_length=max_length, device=resolved_device)
+    warmup_steps = max(0, int(len(train_loader) * 0.1))
+    epoch_metrics_history: list[dict[str, float | int]] = []
+    for epoch_index in range(epochs):
+        if logger is not None:
+            logger.info(
+                "reranker_epoch_started",
+                extra={
+                    "structured": {
+                        "epoch": epoch_index + 1,
+                        "epochs": epochs,
+                        "device": resolved_device,
+                    }
+                },
+            )
+        model.fit(
+            train_dataloader=train_loader,
+            epochs=1,
+            warmup_steps=warmup_steps if epoch_index == 0 else 0,
+            optimizer_params={"lr": learning_rate},
+            output_path=str(model_dir),
+            save_best_model=False,
+            show_progress_bar=True,
+        )
+        dev_scored = dev_pairs.copy()
+        dev_inputs = dev_scored[["query_text", "candidate_text"]].astype(str).values.tolist()
+        dev_scored["rerank_score"] = model.predict(
+            dev_inputs,
+            batch_size=batch_size,
+            show_progress_bar=True,
+            convert_to_numpy=True,
+        )
+        epoch_records = scored_pairs_to_retrieval_records(dev_scored, top_k=top_k)
+        epoch_metrics = compute_retrieval_metrics(epoch_records)
+        epoch_metrics["epoch"] = int(epoch_index + 1)
+        epoch_metrics_history.append(epoch_metrics)
+        if logger is not None:
+            logger.info("reranker_epoch_completed", extra={"structured": {"metrics": epoch_metrics}})
 
     dev_scored = dev_pairs.copy()
     dev_inputs = dev_scored[["query_text", "candidate_text"]].astype(str).values.tolist()
     dev_scored["rerank_score"] = model.predict(
         dev_inputs,
         batch_size=batch_size,
-        show_progress_bar=False,
+        show_progress_bar=True,
         convert_to_numpy=True,
     )
     dev_pair_scores_path = output_root / "dev_pair_scores.parquet"
@@ -171,9 +244,11 @@ def train_cross_encoder_reranker(
             "dev_pairs": int(len(dev_pairs)),
             "positive_rate_train": float(train_pairs["label"].mean()),
             "positive_rate_dev": float(dev_pairs["label"].mean()),
+            "device": resolved_device,
         },
         output_root / "reranker_training_summary.json",
     )
+    dump_json(epoch_metrics_history, output_root / "reranker_epoch_metrics.json")
     return RerankerArtifacts(
         model_dir=model_dir,
         dev_pair_scores_path=dev_pair_scores_path,
@@ -208,6 +283,8 @@ def rerank_retrieval_records(
     batch_size: int = 8,
     top_k: int = 10,
     scorer: PairScorer | None = None,
+    device: str | None = None,
+    show_progress_bar: bool = True,
 ) -> list[dict]:
     scorer_obj: PairScorer
     if scorer is not None:
@@ -218,11 +295,14 @@ def rerank_retrieval_records(
                 "sentence-transformers is not installed. Install full project dependencies "
                 "before using reranking."
             ) from _RERANK_IMPORT_ERROR
-        scorer_obj = CrossEncoder(model_name_or_path, num_labels=1)
+        scorer_obj = CrossEncoder(model_name_or_path, num_labels=1, device=resolve_torch_device(device))
 
     corpus_lookup = _corpus_text_lookup(corpus)
     reranked_records: list[dict] = []
-    for record in retrieval_records:
+    iterator = retrieval_records
+    if show_progress_bar:
+        iterator = tqdm(retrieval_records, desc="Cross-encoder reranking", unit="query")
+    for record in iterator:
         candidates = record.get("candidates", [])
         pair_inputs = []
         enriched = []

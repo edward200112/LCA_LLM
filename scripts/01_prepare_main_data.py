@@ -3,6 +3,10 @@ from __future__ import annotations
 import argparse
 from pathlib import Path
 
+from _bootstrap import bootstrap_src_path
+
+bootstrap_src_path()
+
 from open_match_lca.constants import LOGS_DIR
 from open_match_lca.data.build_naics_corpus import build_naics_corpus
 from open_match_lca.data.merge_targets import merge_products_with_epa_factors

@@ -1,8 +1,8 @@
 name: "full_experiment"
 seed: 13
 seeds: [13, 42, 3407]
-model_name: "multilingual-e5-base"
-dense_encoder_name: "intfloat/multilingual-e5-base"
+model_name: "models/retriever/multilingual-e5-base"
+dense_encoder_name: "models/retriever/multilingual-e5-base"
 retrieval_mode: "hybrid"
 split_type: "random_stratified"
 splits_dir: "data/splits"
@@ -12,12 +12,13 @@ uslci_path: "data/processed/uslci_processes.parquet"
 process_retriever: "bm25"
 process_top_k: 10
 process_prefilter_by_naics: false
-rerank_base_model: "cross-encoder/ms-marco-MiniLM-L-6-v2"
+rerank_base_model: "models/reranker/ms-marco-MiniLM-L6-v2"
 batch_size: 32
 max_length: 256
 learning_rate: 2.0e-5
 epochs: 3
 top_k: 50
+device: "auto"
 whether_rerank: true
 whether_regression: true
 whether_process_extension: true

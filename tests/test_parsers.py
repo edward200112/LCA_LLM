@@ -63,6 +63,22 @@ def test_parsers_roundtrip(tmp_path: Path) -> None:
     assert naics["naics_code_2"].tolist() == ["33", "33"]
 
 
+def test_parse_amazon_caml_filters_placeholder_codes(tmp_path: Path) -> None:
+    amazon_dir = tmp_path / "amazon"
+    amazon_dir.mkdir()
+    pd.DataFrame(
+        [
+            {"product_id": "p1", "title": "valid chair", "description": "metal", "gold_naics_code": "337127"},
+            {"product_id": "p2", "title": "placeholder", "description": "unknown", "gold_naics_code": "000001"},
+            {"product_id": "p3", "title": "zero", "description": "unknown", "gold_naics_code": "000000"},
+        ]
+    ).to_csv(amazon_dir / "products.csv", index=False)
+
+    products = parse_amazon_caml(str(amazon_dir))
+
+    assert products["gold_naics_code"].tolist() == ["337127"]
+
+
 def test_smoke_pipeline_cli(tmp_path: Path) -> None:
     project_root = Path(__file__).resolve().parents[1]
     raw_root = tmp_path / "raw"

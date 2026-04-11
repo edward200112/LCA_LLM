@@ -23,6 +23,7 @@ dependencies = [
   "rank-bm25>=0.2.2",
   "matplotlib>=3.8",
   "seaborn>=0.13",
+  "tqdm>=4.66",
 ]
 
 [project.optional-dependencies]

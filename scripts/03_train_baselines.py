@@ -5,6 +5,10 @@ from pathlib import Path
 
 import pandas as pd
 
+from _bootstrap import bootstrap_src_path
+
+bootstrap_src_path()
+
 from open_match_lca.constants import LOGS_DIR
 from open_match_lca.io_utils import load_yaml, require_exists, write_jsonl
 from open_match_lca.logging_utils import log_final_metrics, setup_run_logger
@@ -42,6 +46,7 @@ def main() -> None:
     batch_size = int(config.get("batch_size", 16))
     encoder_name = str(config.get("name", "all-MiniLM-L6-v2"))
     index_dir = config.get("index_dir")
+    device = config.get("device")
 
     if args.model == "exact":
         runs = exact_or_lexical_retrieve(dev, corpus, top_k=top_k)
@@ -57,6 +62,8 @@ def main() -> None:
             encoder_name=encoder_name,
             batch_size=batch_size,
             index_dir=None if index_dir is None else str(index_dir),
+            device=device,
+            show_progress_bar=True,
         )
 
     output_path = Path(args.output_dir) / f"retrieval_topk_dev_{args.model}.jsonl"

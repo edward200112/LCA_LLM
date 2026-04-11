@@ -107,12 +107,16 @@ def dense_zero_shot_retrieve(
     batch_size: int = 32,
     encoder: EncoderLike | None = None,
     index_dir: str | None = None,
+    device: str | None = None,
+    show_progress_bar: bool = True,
 ) -> list[dict]:
     retriever = DenseRetriever(
         corpus_texts=corpus["naics_text"].astype(str).tolist(),
         encoder_name=encoder_name,
         batch_size=batch_size,
         encoder=encoder,
+        device=device,
+        show_progress_bar=show_progress_bar,
     )
     if index_dir:
         retriever.save_index(index_dir)

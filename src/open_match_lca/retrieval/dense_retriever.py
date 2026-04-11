@@ -5,8 +5,10 @@ from pathlib import Path
 from typing import Protocol
 
 import numpy as np
+from tqdm.auto import tqdm
 
 from open_match_lca.io_utils import ensure_directory
+from open_match_lca.torch_utils import resolve_torch_device
 
 try:
     from sentence_transformers import SentenceTransformer
@@ -48,10 +50,14 @@ class DenseRetriever:
         encoder_name: str = "all-MiniLM-L6-v2",
         batch_size: int = 32,
         encoder: EncoderLike | None = None,
+        device: str | None = None,
+        show_progress_bar: bool = False,
     ) -> None:
         self.corpus_texts = corpus_texts
         self.encoder_name = encoder_name
         self.batch_size = batch_size
+        self.device = resolve_torch_device(device)
+        self.show_progress_bar = show_progress_bar
         self.encoder = encoder or self._load_encoder(encoder_name)
         self.corpus_embeddings = self._encode(corpus_texts)
 
@@ -61,14 +67,14 @@ class DenseRetriever:
                 "sentence-transformers is not installed. Install project full dependencies "
                 "before using dense retrieval."
             ) from _SENTENCE_TRANSFORMERS_IMPORT_ERROR
-        return SentenceTransformer(encoder_name)
+        return SentenceTransformer(encoder_name, device=self.device)
 
     def _encode(self, texts: list[str]) -> np.ndarray:
         embeddings = self.encoder.encode(
             texts,
             batch_size=self.batch_size,
             normalize_embeddings=True,
-            show_progress_bar=False,
+            show_progress_bar=self.show_progress_bar,
             convert_to_numpy=True,
         )
         embeddings = np.asarray(embeddings, dtype=float)
@@ -91,7 +97,10 @@ class DenseRetriever:
         query_embeddings = self._encode(queries)
         score_matrix = query_embeddings @ self.corpus_embeddings.T
         results: list[list[DenseSearchHit]] = []
-        for row_scores in score_matrix:
+        iterator = score_matrix
+        if self.show_progress_bar:
+            iterator = tqdm(score_matrix, desc="Dense retrieval ranking", unit="query")
+        for row_scores in iterator:
             top_indices = np.argsort(row_scores)[::-1][:top_k]
             results.append(
                 [

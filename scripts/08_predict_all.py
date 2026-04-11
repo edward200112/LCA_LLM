@@ -5,6 +5,10 @@ from pathlib import Path
 
 import pandas as pd
 
+from _bootstrap import bootstrap_src_path
+
+bootstrap_src_path()
+
 from open_match_lca.constants import LOGS_DIR
 from open_match_lca.io_utils import load_yaml, read_jsonl, require_exists, write_parquet, write_jsonl
 from open_match_lca.logging_utils import setup_run_logger
@@ -78,6 +82,8 @@ def main() -> None:
             model_name_or_path=args.reranker_ckpt,
             batch_size=int(config.get("batch_size", 8)),
             top_k=rerank_top_k,
+            device=config.get("device"),
+            show_progress_bar=True,
         )
         rerank_output = output_dir / f"retrieval_topk_{split_name}_reranked.jsonl"
         write_jsonl(reranked, rerank_output)

@@ -200,6 +200,7 @@ def run_pipeline(config: dict[str, Any], seed: int, output_dir: str | Path, dry_
     dense_encoder_name = str(config.get("dense_encoder_name", "all-MiniLM-L6-v2"))
     rerank_base_model = str(config.get("rerank_base_model", "cross-encoder/ms-marco-MiniLM-L-6-v2"))
     retrieval_mode = str(config.get("retrieval_mode", "hybrid"))
+    device = config.get("device")
 
     bm25_runs: dict[str, list[dict]] = {}
     dense_runs: dict[str, list[dict]] = {}
@@ -226,6 +227,7 @@ def run_pipeline(config: dict[str, Any], seed: int, output_dir: str | Path, dry_
             learning_rate=float(config.get("learning_rate", 2e-5)),
             max_length=int(config.get("max_length", 256)),
             top_k=top_k,
+            device=device,
         )
         for split_name, frame in [("train", train), ("dev", dev), ("test", test)]:
             dense_runs[split_name] = dense_zero_shot_retrieve(
@@ -234,6 +236,8 @@ def run_pipeline(config: dict[str, Any], seed: int, output_dir: str | Path, dry_
                 top_k=top_k,
                 encoder_name=str(dense_artifacts.model_dir),
                 batch_size=batch_size,
+                device=device,
+                show_progress_bar=True,
             )
             write_jsonl(
                 dense_runs[split_name],
@@ -268,6 +272,8 @@ def run_pipeline(config: dict[str, Any], seed: int, output_dir: str | Path, dry_
             epochs=int(config.get("epochs", 1)),
             learning_rate=float(config.get("learning_rate", 2e-5)),
             max_length=int(config.get("max_length", 256)),
+            top_k=int(config.get("rerank_top_k", top_k)),
+            device=device,
         )
         for split_name in ["train", "dev", "test"]:
             selected_runs[split_name] = rerank_retrieval_records(
@@ -276,6 +282,8 @@ def run_pipeline(config: dict[str, Any], seed: int, output_dir: str | Path, dry_
                 model_name_or_path=str(rerank_artifacts.model_dir),
                 batch_size=batch_size,
                 top_k=int(config.get("rerank_top_k", top_k)),
+                device=device,
+                show_progress_bar=True,
             )
             write_jsonl(
                 selected_runs[split_name],

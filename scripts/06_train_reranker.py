@@ -2,6 +2,10 @@ from __future__ import annotations
 
 import argparse
 
+from _bootstrap import bootstrap_src_path
+
+bootstrap_src_path()
+
 from open_match_lca.constants import LOGS_DIR
 from open_match_lca.io_utils import load_yaml
 from open_match_lca.logging_utils import log_final_metrics, setup_run_logger
@@ -39,6 +43,9 @@ def main() -> None:
         epochs=int(config.get("epochs", 1)),
         learning_rate=float(config.get("learning_rate", 2e-5)),
         max_length=int(config.get("max_length", 256)),
+        top_k=int(config.get("top_k", 10)),
+        device=config.get("device"),
+        logger=logger,
     )
     log_final_metrics(
         logger,

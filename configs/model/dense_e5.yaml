@@ -1,4 +1,4 @@
-name: "multilingual-e5-base"
+name: "models/retriever/multilingual-e5-base"
 batch_size: 16
 max_length: 256
 learning_rate: 2.0e-5
@@ -7,4 +7,5 @@ top_k: 50
 index_dir: "data/indices/dense_e5"
 loss: "MultipleNegativesRankingLoss"
 hard_negative_priority: ["4_digit", "2_digit"]
+device: "auto"
 smoke_test: true

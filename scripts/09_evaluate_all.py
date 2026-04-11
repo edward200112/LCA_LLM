@@ -5,6 +5,10 @@ from pathlib import Path
 
 import pandas as pd
 
+from _bootstrap import bootstrap_src_path
+
+bootstrap_src_path()
+
 from open_match_lca.eval.eval_regression import compute_regression_metrics
 from open_match_lca.constants import LOGS_DIR
 from open_match_lca.eval.eval_retrieval import compute_retrieval_metrics

@@ -5,6 +5,10 @@ from pathlib import Path
 
 import pandas as pd
 
+from _bootstrap import bootstrap_src_path
+
+bootstrap_src_path()
+
 from open_match_lca.constants import LOGS_DIR
 from open_match_lca.io_utils import load_yaml, require_exists
 from open_match_lca.logging_utils import log_final_metrics, setup_run_logger

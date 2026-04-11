@@ -2,6 +2,10 @@ from __future__ import annotations
 
 import argparse
 
+from _bootstrap import bootstrap_src_path
+
+bootstrap_src_path()
+
 from open_match_lca.constants import LOGS_DIR
 from open_match_lca.data.download_public_data import PUBLIC_DATASET_MANIFEST, scaffold_download_targets
 from open_match_lca.logging_utils import log_final_metrics, setup_run_logger

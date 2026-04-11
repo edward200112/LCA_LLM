@@ -35,9 +35,20 @@ source .venv/bin/activate
 make install-dev
 ```
 
-## 数据下载方法
+## 数据准备方法
 
-当前仓库优先提供公开数据接口与解析器骨架。下载脚本会创建目标目录并记录目标清单；若某数据源需要研究者手动放置原始文件，脚本会给出明确提示，不会静默失败。
+如果你已经把相关公开代码仓库下载到本地，例如 `carbon-assessment-with-ml/`，推荐直接复制已有原始文件到本仓库，而不是重复走下载脚本。
+
+例如当前项目可直接复用：
+
+```bash
+cp /Users/edward0112/Desktop/lca/carbon-assessment-with-ml/caml/data/40k_products_annotations.pkl data/raw/amazon_caml/
+cp /Users/edward0112/Desktop/lca/carbon-assessment-with-ml/caml/data/6k_grocery_products_annotations.pkl data/raw/amazon_caml/
+cp /Users/edward0112/Desktop/lca/carbon-assessment-with-ml/caml/data/naics_codes.pkl data/raw/naics/
+cp /Users/edward0112/Desktop/lca/carbon-assessment-with-ml/caml/data/naics_codes.pkl data/raw/epa_factors/
+```
+
+下载脚本仍然保留为备选。它只负责创建目录和 manifest；若某数据源需要研究者手动放置原始文件，脚本会给出明确提示，不会静默失败。
 
 ```bash
 source .venv/bin/activate

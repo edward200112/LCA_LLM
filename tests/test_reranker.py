@@ -6,6 +6,7 @@ import pandas as pd
 from open_match_lca.retrieval.rerank_cross_encoder import (
     build_reranker_pairs_from_run,
     rerank_retrieval_records,
+    scored_pairs_to_retrieval_records,
 )
 
 
@@ -76,3 +77,31 @@ def test_rerank_retrieval_records_with_fake_scorer() -> None:
     )
     assert reranked[0]["candidates"][0]["naics_code"] == "337127"
     assert "rerank_score" in reranked[0]["candidates"][0]
+
+
+def test_scored_pairs_to_retrieval_records_groups_and_sorts() -> None:
+    scored_pairs = pd.DataFrame(
+        [
+            {
+                "product_id": "p1",
+                "gold_naics_code": "337127",
+                "query_text": "metal chair",
+                "candidate_id": "335139",
+                "naics_code": "335139",
+                "initial_score": 0.1,
+                "rerank_score": 0.2,
+            },
+            {
+                "product_id": "p1",
+                "gold_naics_code": "337127",
+                "query_text": "metal chair",
+                "candidate_id": "337127",
+                "naics_code": "337127",
+                "initial_score": 0.05,
+                "rerank_score": 0.9,
+            },
+        ]
+    )
+    records = scored_pairs_to_retrieval_records(scored_pairs, top_k=2)
+    assert len(records) == 1
+    assert records[0]["candidates"][0]["naics_code"] == "337127"

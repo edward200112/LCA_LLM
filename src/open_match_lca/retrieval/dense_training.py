@@ -11,6 +11,7 @@ from torch.utils.data import DataLoader
 from open_match_lca.eval.eval_retrieval import compute_retrieval_metrics
 from open_match_lca.io_utils import dump_json, ensure_directory, write_jsonl, write_parquet
 from open_match_lca.retrieval.candidate_generation import dense_zero_shot_retrieve
+from open_match_lca.torch_utils import resolve_torch_device
 
 try:
     from sentence_transformers import InputExample, SentenceTransformer
@@ -175,6 +176,7 @@ def train_dense_model(
     max_length: int,
     top_k: int,
     logger: Logger | None = None,
+    device: str | None = None,
 ) -> DenseTrainArtifacts:
     if SentenceTransformer is None or MultipleNegativesRankingLoss is None:  # pragma: no cover
         raise RuntimeError(
@@ -197,19 +199,21 @@ def train_dense_model(
     train_pairs_path = output_root / "train_pairs.parquet"
     write_parquet(train_pairs, train_pairs_path)
 
-    model = SentenceTransformer(encoder_name)
+    resolved_device = resolve_torch_device(device)
+    model = SentenceTransformer(encoder_name, device=resolved_device)
     model.max_seq_length = int(max_length)
     train_examples = build_input_examples(train_pairs)
     train_loader = DataLoader(train_examples, batch_size=batch_size, shuffle=False)
     train_loss = MultipleNegativesRankingLoss(model)
 
-    warmup_steps = max(0, int(len(train_loader) * max(epochs, 1) * 0.1))
+    warmup_steps = max(0, int(len(train_loader) * 0.1))
     if logger is not None:
         logger.info(
             "dense_training_started",
             extra={
                 "structured": {
                     "encoder_name": encoder_name,
+                    "device": resolved_device,
                     "train_pairs": len(train_pairs),
                     "epochs": epochs,
                     "batch_size": batch_size,
@@ -219,15 +223,44 @@ def train_dense_model(
         )
 
     model_dir = output_root / "dense_model"
-    model.fit(
-        train_objectives=[(train_loader, train_loss)],
-        epochs=epochs,
-        warmup_steps=warmup_steps,
-        optimizer_params={"lr": learning_rate},
-        output_path=str(model_dir),
-        save_best_model=False,
-        show_progress_bar=False,
-    )
+    epoch_metrics_history: list[dict[str, float | int]] = []
+    for epoch_index in range(epochs):
+        if logger is not None:
+            logger.info(
+                "dense_epoch_started",
+                extra={
+                    "structured": {
+                        "epoch": epoch_index + 1,
+                        "epochs": epochs,
+                        "device": resolved_device,
+                    }
+                },
+            )
+        model.fit(
+            train_objectives=[(train_loader, train_loss)],
+            epochs=1,
+            warmup_steps=warmup_steps if epoch_index == 0 else 0,
+            optimizer_params={"lr": learning_rate},
+            output_path=str(model_dir),
+            save_best_model=False,
+            show_progress_bar=True,
+        )
+        epoch_runs = dense_zero_shot_retrieve(
+            dev_products,
+            corpus,
+            top_k=top_k,
+            encoder_name=str(model_dir),
+            batch_size=batch_size,
+            encoder=model,
+            index_dir=str(index_root),
+            device=resolved_device,
+            show_progress_bar=True,
+        )
+        epoch_metrics = compute_retrieval_metrics(epoch_runs)
+        epoch_metrics["epoch"] = int(epoch_index + 1)
+        epoch_metrics_history.append(epoch_metrics)
+        if logger is not None:
+            logger.info("dense_epoch_completed", extra={"structured": {"metrics": epoch_metrics}})
     model.save(str(model_dir))
 
     dev_runs = dense_zero_shot_retrieve(
@@ -238,6 +271,8 @@ def train_dense_model(
         batch_size=batch_size,
         encoder=model,
         index_dir=str(index_root),
+        device=resolved_device,
+        show_progress_bar=True,
     )
     dev_run_path = output_root / "retrieval_topk_dev_dense_finetuned.jsonl"
     write_jsonl(dev_runs, dev_run_path)
@@ -246,8 +281,10 @@ def train_dense_model(
     dev_metrics["train_pairs"] = int(len(train_pairs))
     dev_metrics["train_unique_labels"] = int(train_pairs["gold_naics_code"].nunique())
     dev_metrics["hard_negative_buckets"] = int(train_pairs["hard_negative_bucket"].nunique())
+    dev_metrics["device"] = resolved_device
     dev_metrics_path = output_root / "retrieval_metrics_dev_dense_finetuned.json"
     dump_json(dev_metrics, dev_metrics_path)
+    dump_json(epoch_metrics_history, output_root / "retrieval_metrics_dev_dense_finetuned_epochs.json")
     if logger is not None:
         logger.info("dense_training_completed", extra={"structured": {"dev_metrics": dev_metrics}})
 

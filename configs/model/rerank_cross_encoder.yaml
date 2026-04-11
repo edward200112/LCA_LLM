@@ -1,8 +1,9 @@
-name: "cross-encoder/ms-marco-MiniLM-L-6-v2"
+name: "models/reranker/ms-marco-MiniLM-L6-v2"
 batch_size: 8
 max_length: 256
 learning_rate: 2.0e-5
 epochs: 1
 top_k: 10
 loss: "BCEWithLogitsLoss"
+device: "auto"
 smoke_test: true
