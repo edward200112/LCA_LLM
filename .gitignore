@@ -10,7 +10,7 @@ htmlcov/
 dist/
 build/
 *.egg-info/
-data/raw/**
+# data/raw/**
 !data/raw/.gitkeep
 data/interim/**
 !data/interim/.gitkeep

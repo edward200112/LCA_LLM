@@ -1,0 +1,27 @@
+{
+  "amazon": {
+    "description": "Place the publicly released CaML-style product data here.",
+    "manual_download": true,
+    "path": "data/raw/amazon",
+    "status": "ready_for_manual_drop"
+  },
+  "epa": {
+    "description": "Place EPA/USEEIO factor tables here.",
+    "manual_download": true,
+    "path": "data/raw/epa",
+    "status": "ready_for_manual_drop"
+  },
+  "naics": {
+    "description": "Place official NAICS tables here.",
+    "manual_download": true,
+    "path": "data/raw/naics",
+    "status": "ready_for_manual_drop"
+  },
+  "uslci": {
+    "description": "Optional extension. Place public USLCI JSON-LD or tabular exports here.",
+    "manual_download": true,
+    "optional_extension": true,
+    "path": "data/raw/uslci",
+    "status": "ready_for_manual_drop"
+  }
+}
