@@ -46,11 +46,14 @@ def main() -> None:
         top_k=int(config.get("top_k", 10)),
         device=config.get("device"),
         logger=logger,
+        checkpoint_save_steps=int(config.get("checkpoint_save_steps", 300)),
+        checkpoint_save_total_limit=int(config.get("checkpoint_save_total_limit", 2)),
     )
     log_final_metrics(
         logger,
         {
             "model_dir": str(artifacts.model_dir),
+            "checkpoint_dir": str(artifacts.checkpoint_dir),
             "dev_pair_scores_path": str(artifacts.dev_pair_scores_path),
             "train_pair_count": artifacts.train_pair_count,
             "dev_pair_count": artifacts.dev_pair_count,

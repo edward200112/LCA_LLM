@@ -42,10 +42,10 @@ make install-dev
 例如当前项目可直接复用：
 
 ```bash
-cp /Users/edward0112/Desktop/lca/carbon-assessment-with-ml/caml/data/40k_products_annotations.pkl data/raw/amazon_caml/
-cp /Users/edward0112/Desktop/lca/carbon-assessment-with-ml/caml/data/6k_grocery_products_annotations.pkl data/raw/amazon_caml/
-cp /Users/edward0112/Desktop/lca/carbon-assessment-with-ml/caml/data/naics_codes.pkl data/raw/naics/
-cp /Users/edward0112/Desktop/lca/carbon-assessment-with-ml/caml/data/naics_codes.pkl data/raw/epa_factors/
+cp carbon-assessment-with-ml/caml/data/40k_products_annotations.pkl data/raw/amazon_caml/
+cp carbon-assessment-with-ml/caml/data/6k_grocery_products_annotations.pkl data/raw/amazon_caml/
+cp caml/data/naics_codes.pkl data/raw/naics/
+cp caml/data/naics_codes.pkl data/raw/epa_factors/
 ```
 
 下载脚本仍然保留为备选。它只负责创建目录和 manifest；若某数据源需要研究者手动放置原始文件，脚本会给出明确提示，不会静默失败。
