@@ -36,12 +36,12 @@ def build_parser() -> argparse.ArgumentParser:
 
 def _load_metric_rows(metrics_dir: Path) -> pd.DataFrame:
     rows = []
-    for path in sorted(metrics_dir.glob("*.json")):
+    for path in sorted(metrics_dir.rglob("*.json")):
         payload = json.loads(path.read_text(encoding="utf-8"))
         if not isinstance(payload, dict):
             continue
         row = dict(payload)
-        row["metric_file"] = path.name
+        row["metric_file"] = str(path.relative_to(metrics_dir))
         row["metric_type"] = path.stem.split("_metrics_")[0]
         row["split_model"] = path.stem.split("_metrics_")[-1]
         rows.append(row)

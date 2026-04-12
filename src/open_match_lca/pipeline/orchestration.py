@@ -372,7 +372,7 @@ def run_pipeline(config: dict[str, Any], seed: int, output_dir: str | Path, dry_
                 paths.metrics_dir / "regression_metrics_test_lgbm_regressor.json",
             )
             if bool(config.get("whether_uncertainty", True)):
-                uncertainty_input = reg_preds.rename(
+                uncertainty_input = reg_preds.drop(columns=["lower", "upper"], errors="ignore").rename(
                     columns={"lower_conformal": "lower", "upper_conformal": "upper"}
                 )
                 dump_json(
