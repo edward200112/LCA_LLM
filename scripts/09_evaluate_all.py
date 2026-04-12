@@ -74,7 +74,9 @@ def _evaluate_regression_file(pred_file: str, enable_uncertainty: bool) -> tuple
     uncertainty_metrics = None
     required_uncertainty = {"y_true", "lower_conformal", "upper_conformal", "confidence", "error"}
     if enable_uncertainty and required_uncertainty.issubset(frame.columns):
-        uncertainty_input = frame.rename(columns={"lower_conformal": "lower", "upper_conformal": "upper"}).copy()
+        uncertainty_input = frame.drop(columns=["lower", "upper"], errors="ignore").rename(
+            columns={"lower_conformal": "lower", "upper_conformal": "upper"}
+        ).copy()
         if "correct" not in uncertainty_input.columns:
             uncertainty_input["correct"] = (
                 (uncertainty_input["y_true"] >= uncertainty_input["lower"])

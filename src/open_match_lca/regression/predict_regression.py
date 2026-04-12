@@ -15,6 +15,7 @@ from open_match_lca.regression.topk_factor_mixture import softmax
 from open_match_lca.schemas import normalize_naics_code
 from open_match_lca.uncertainty.classification_confidence import confidence_from_scores
 from open_match_lca.uncertainty.conformal_regression import apply_conformal_interval
+from open_match_lca.uncertainty.regression_confidence import apply_regression_confidence_calibrator
 
 
 NON_FEATURE_COLUMNS = {
@@ -253,7 +254,10 @@ def predict_with_regression_bundle(
     pred_frame["lower_conformal"] = pred_frame["lower"] - conformal_qhat
     pred_frame["upper_conformal"] = pred_frame["upper"] + conformal_qhat
     pred_frame["interval_width"] = pred_frame["upper_conformal"] - pred_frame["lower_conformal"]
-    pred_frame["confidence"] = pred_frame["top1_probability"] / (pred_frame["interval_width"] + 1e-6)
+    pred_frame["confidence"] = apply_regression_confidence_calibrator(
+        pred_frame,
+        bundle["metadata"].get("confidence_calibrator"),
+    )
     threshold = float(bundle["metadata"].get("abstention_threshold", 0.0))
     pred_frame["retained"] = pred_frame["confidence"] >= threshold
     if "y_true" in pred_frame.columns:

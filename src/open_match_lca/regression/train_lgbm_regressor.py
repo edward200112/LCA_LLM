@@ -15,6 +15,10 @@ from open_match_lca.regression.predict_regression import (
 )
 from open_match_lca.uncertainty.abstention import learn_abstention_threshold
 from open_match_lca.uncertainty.conformal_regression import conformal_quantile
+from open_match_lca.uncertainty.regression_confidence import (
+    apply_regression_confidence_calibrator,
+    fit_regression_confidence_calibrator,
+)
 
 try:
     from lightgbm import LGBMRegressor
@@ -124,9 +128,6 @@ def train_lgbm_quantile_regressor(
     dev_predictions["interval_width"] = (
         dev_predictions["upper_conformal"] - dev_predictions["lower_conformal"]
     )
-    dev_predictions["confidence"] = dev_predictions["top1_probability"] / (
-        dev_predictions["interval_width"] + 1e-6
-    )
     dev_predictions["error"] = (
         dev_predictions["pred_factor_value"] - dev_predictions["y_true"]
     ).abs()
@@ -134,6 +135,11 @@ def train_lgbm_quantile_regressor(
         (dev_predictions["y_true"] >= dev_predictions["lower_conformal"])
         & (dev_predictions["y_true"] <= dev_predictions["upper_conformal"])
     ).astype(float)
+    confidence_calibrator = fit_regression_confidence_calibrator(dev_predictions, error_col="error")
+    dev_predictions["confidence"] = apply_regression_confidence_calibrator(
+        dev_predictions,
+        confidence_calibrator,
+    )
     abstention_threshold = learn_abstention_threshold(
         dev_predictions,
         confidence_col="confidence",
@@ -165,6 +171,7 @@ def train_lgbm_quantile_regressor(
             "quantiles": list(quantiles),
             "conformal_qhat": float(conformal_qhat),
             "abstention_threshold": float(abstention_threshold),
+            "confidence_calibrator": confidence_calibrator,
             "top_k": int(top_k),
             "pca_dim": int(pca_dim),
             "seed": int(seed),
@@ -181,6 +188,7 @@ def train_lgbm_quantile_regressor(
                     "feature_columns": feature_columns,
                     "conformal_qhat": float(conformal_qhat),
                     "abstention_threshold": float(abstention_threshold),
+                    "confidence_calibrator": confidence_calibrator,
                 }
             },
         )
