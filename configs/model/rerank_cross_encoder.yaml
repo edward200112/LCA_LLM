@@ -1,11 +1,11 @@
 name: "models/reranker/ms-marco-MiniLM-L6-v2"
-batch_size: 256
+batch_size: 8
 max_length: 256
 learning_rate: 2.0e-5
 epochs: 1
 top_k: 10
 loss: "BCEWithLogitsLoss"
 device: "auto"
-checkpoint_save_steps: 300
+checkpoint_save_steps: 3000
 checkpoint_save_total_limit: 2
 smoke_test: true
