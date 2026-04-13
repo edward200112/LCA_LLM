@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING
@@ -30,6 +31,11 @@ else:
 
 if TYPE_CHECKING:
     from logging import Logger
+
+
+def _default_lgbm_jobs() -> int:
+    cpu_count = os.cpu_count() or 1
+    return max(1, min(32, cpu_count))
 
 
 @dataclass(frozen=True)
@@ -68,7 +74,7 @@ def _fit_model(
         "num_leaves": 31,
         "min_child_samples": 1,
         "min_data_in_bin": 1,
-        "n_jobs": 1,
+        "n_jobs": _default_lgbm_jobs(),
         "verbosity": -1,
     }
     if alpha is not None:

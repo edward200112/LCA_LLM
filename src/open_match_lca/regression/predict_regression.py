@@ -106,7 +106,8 @@ def build_regression_feature_frame(
             f"products_frame must include product_id and text. Available columns: {list(products_frame.columns)}"
         )
     factor_lookup = build_factor_lookup(epa_factors)
-    product_lookup = products_frame.set_index("product_id").to_dict("index")
+    dedup_products = products_frame.drop_duplicates(subset=["product_id"], keep="first").reset_index(drop=True)
+    product_lookup = dedup_products.set_index("product_id").to_dict("index")
 
     rows: list[dict[str, Any]] = []
     texts: list[str] = []

@@ -182,6 +182,10 @@ def _save_metrics(run_records: list[dict], output_path: Path) -> None:
     dump_json(compute_retrieval_metrics(run_records), output_path)
 
 
+def _has_materialized_directory(path: Path) -> bool:
+    return path.exists() and path.is_dir() and any(path.iterdir())
+
+
 def run_pipeline(config: dict[str, Any], seed: int, output_dir: str | Path, dry_run: bool = False) -> dict[str, Any]:
     paths = resolve_pipeline_paths(config, output_dir, seed)
     manifest = build_pipeline_manifest(config, seed, output_dir)
@@ -208,41 +212,46 @@ def run_pipeline(config: dict[str, Any], seed: int, output_dir: str | Path, dry_
 
     if retrieval_mode in {"bm25", "hybrid"}:
         for split_name, frame in [("train", train), ("dev", dev), ("test", test)]:
-            bm25_runs[split_name] = bm25_retrieve(frame, corpus, top_k=top_k)
-            write_jsonl(
-                bm25_runs[split_name],
-                paths.run_dir / f"retrieval_topk_{split_name}_bm25.jsonl",
-            )
+            output_path = paths.run_dir / f"retrieval_topk_{split_name}_bm25.jsonl"
+            if output_path.exists():
+                bm25_runs[split_name] = read_jsonl(output_path)
+            else:
+                bm25_runs[split_name] = bm25_retrieve(frame, corpus, top_k=top_k)
+                write_jsonl(bm25_runs[split_name], output_path)
 
     if retrieval_mode in {"dense", "hybrid"}:
-        dense_artifacts = train_dense_model(
-            train_products=train,
-            dev_products=dev,
-            corpus=corpus,
-            encoder_name=dense_encoder_name,
-            output_dir=paths.run_dir / "dense_training",
-            index_dir=paths.run_dir / "indices" / "dense_finetuned",
-            batch_size=batch_size,
-            epochs=int(config.get("epochs", 1)),
-            learning_rate=float(config.get("learning_rate", 2e-5)),
-            max_length=int(config.get("max_length", 256)),
-            top_k=top_k,
-            device=device,
-        )
-        for split_name, frame in [("train", train), ("dev", dev), ("test", test)]:
-            dense_runs[split_name] = dense_zero_shot_retrieve(
-                frame,
-                corpus,
-                top_k=top_k,
-                encoder_name=str(dense_artifacts.model_dir),
+        dense_model_dir = paths.run_dir / "dense_training" / "dense_model"
+        if not _has_materialized_directory(dense_model_dir):
+            dense_artifacts = train_dense_model(
+                train_products=train,
+                dev_products=dev,
+                corpus=corpus,
+                encoder_name=dense_encoder_name,
+                output_dir=paths.run_dir / "dense_training",
+                index_dir=paths.run_dir / "indices" / "dense_finetuned",
                 batch_size=batch_size,
+                epochs=int(config.get("epochs", 1)),
+                learning_rate=float(config.get("learning_rate", 2e-5)),
+                max_length=int(config.get("max_length", 256)),
+                top_k=top_k,
                 device=device,
-                show_progress_bar=True,
             )
-            write_jsonl(
-                dense_runs[split_name],
-                paths.run_dir / f"retrieval_topk_{split_name}_dense_finetuned.jsonl",
-            )
+            dense_model_dir = dense_artifacts.model_dir
+        for split_name, frame in [("train", train), ("dev", dev), ("test", test)]:
+            output_path = paths.run_dir / f"retrieval_topk_{split_name}_dense_finetuned.jsonl"
+            if output_path.exists():
+                dense_runs[split_name] = read_jsonl(output_path)
+            else:
+                dense_runs[split_name] = dense_zero_shot_retrieve(
+                    frame,
+                    corpus,
+                    top_k=top_k,
+                    encoder_name=str(dense_model_dir),
+                    batch_size=batch_size,
+                    device=device,
+                    show_progress_bar=True,
+                )
+                write_jsonl(dense_runs[split_name], output_path)
 
     if retrieval_mode == "bm25":
         selected_runs = bm25_runs
@@ -263,32 +272,36 @@ def run_pipeline(config: dict[str, Any], seed: int, output_dir: str | Path, dry_
     if bool(config.get("whether_rerank", False)):
         train_pairs = build_reranker_pairs_from_run(selected_runs["train"], corpus, top_k=top_k)
         dev_pairs = build_reranker_pairs_from_run(selected_runs["dev"], corpus, top_k=top_k)
-        rerank_artifacts = train_cross_encoder_reranker(
-            train_pairs=train_pairs,
-            dev_pairs=dev_pairs,
-            base_model=rerank_base_model,
-            output_dir=paths.run_dir / "reranker",
-            batch_size=batch_size,
-            epochs=int(config.get("epochs", 1)),
-            learning_rate=float(config.get("learning_rate", 2e-5)),
-            max_length=int(config.get("max_length", 256)),
-            top_k=int(config.get("rerank_top_k", top_k)),
-            device=device,
-        )
-        for split_name in ["train", "dev", "test"]:
-            selected_runs[split_name] = rerank_retrieval_records(
-                selected_runs[split_name],
-                corpus,
-                model_name_or_path=str(rerank_artifacts.model_dir),
+        reranker_model_dir = paths.run_dir / "reranker" / "reranker_model"
+        if not _has_materialized_directory(reranker_model_dir):
+            rerank_artifacts = train_cross_encoder_reranker(
+                train_pairs=train_pairs,
+                dev_pairs=dev_pairs,
+                base_model=rerank_base_model,
+                output_dir=paths.run_dir / "reranker",
                 batch_size=batch_size,
+                epochs=int(config.get("epochs", 1)),
+                learning_rate=float(config.get("learning_rate", 2e-5)),
+                max_length=int(config.get("max_length", 256)),
                 top_k=int(config.get("rerank_top_k", top_k)),
                 device=device,
-                show_progress_bar=True,
             )
-            write_jsonl(
-                selected_runs[split_name],
-                paths.run_dir / f"retrieval_topk_{split_name}_{selected_model_name}_reranked.jsonl",
-            )
+            reranker_model_dir = rerank_artifacts.model_dir
+        for split_name in ["train", "dev", "test"]:
+            output_path = paths.run_dir / f"retrieval_topk_{split_name}_{selected_model_name}_reranked.jsonl"
+            if output_path.exists():
+                selected_runs[split_name] = read_jsonl(output_path)
+            else:
+                selected_runs[split_name] = rerank_retrieval_records(
+                    selected_runs[split_name],
+                    corpus,
+                    model_name_or_path=str(reranker_model_dir),
+                    batch_size=batch_size,
+                    top_k=int(config.get("rerank_top_k", top_k)),
+                    device=device,
+                    show_progress_bar=True,
+                )
+                write_jsonl(selected_runs[split_name], output_path)
         selected_model_name = f"{selected_model_name}_reranked"
 
     _save_metrics(selected_runs["test"], paths.metrics_dir / f"retrieval_metrics_test_{selected_model_name}.json")
@@ -308,7 +321,8 @@ def run_pipeline(config: dict[str, Any], seed: int, output_dir: str | Path, dry_
         else:
             raise RuntimeError(f"Unsupported factor baseline: {baseline_name}")
         pred_path = paths.run_dir / f"regression_preds_test_{baseline_name}.parquet"
-        write_parquet(preds, pred_path)
+        if not pred_path.exists():
+            write_parquet(preds, pred_path)
         eval_frame = preds.dropna(subset=["y_true", "pred_factor_value"])
         if not eval_frame.empty:
             dump_json(
@@ -317,54 +331,53 @@ def run_pipeline(config: dict[str, Any], seed: int, output_dir: str | Path, dry_
             )
 
     if bool(config.get("whether_regression", False)):
-        train_features, projector = build_regression_feature_frame(
-            selected_runs["train"],
-            train,
-            epa,
-            top_k=int(config.get("regression_top_k", 5)),
-            pca_dim=int(config.get("pca_dim", 64)),
-            fit_projector=True,
-            random_state=seed,
-            include_hierarchy_features=bool(config.get("use_hierarchy_features", True)),
-        )
-        dev_features, _ = build_regression_feature_frame(
-            selected_runs["dev"],
-            dev,
-            epa,
-            top_k=int(config.get("regression_top_k", 5)),
-            pca_dim=int(config.get("pca_dim", 64)),
-            text_projector=projector,
-            fit_projector=False,
-            random_state=seed,
-            include_hierarchy_features=bool(config.get("use_hierarchy_features", True)),
-        )
-        test_features, _ = build_regression_feature_frame(
-            selected_runs["test"],
-            test,
-            epa,
-            top_k=int(config.get("regression_top_k", 5)),
-            pca_dim=int(config.get("pca_dim", 64)),
-            text_projector=projector,
-            fit_projector=False,
-            random_state=seed,
-            include_hierarchy_features=bool(config.get("use_hierarchy_features", True)),
-        )
-        write_parquet(train_features, paths.run_dir / "train_regression_features.parquet")
-        write_parquet(dev_features, paths.run_dir / "dev_regression_features.parquet")
-        artifacts = train_lgbm_quantile_regressor(
-            train_frame=train_features,
-            dev_frame=dev_features,
-            output_dir=paths.run_dir / "regressor",
-            quantiles=tuple(config.get("quantiles", [0.1, 0.5, 0.9])),
-            top_k=int(config.get("regression_top_k", 5)),
-            pca_dim=int(config.get("pca_dim", 64)),
-            seed=seed,
-            text_projector=projector,
-        )
-        bundle = load_regression_bundle(artifacts.bundle_path)
-        reg_preds = predict_with_regression_bundle(selected_runs["test"], test, epa, bundle)
+        regressor_dir = paths.run_dir / "regressor"
+        bundle_path = regressor_dir / "regression_bundle.joblib"
+        if bundle_path.exists():
+            bundle = load_regression_bundle(bundle_path)
+        else:
+            train_features, projector = build_regression_feature_frame(
+                selected_runs["train"],
+                train,
+                epa,
+                top_k=int(config.get("regression_top_k", 5)),
+                pca_dim=int(config.get("pca_dim", 64)),
+                fit_projector=True,
+                random_state=seed,
+                include_hierarchy_features=bool(config.get("use_hierarchy_features", True)),
+            )
+            dev_features, _ = build_regression_feature_frame(
+                selected_runs["dev"],
+                dev,
+                epa,
+                top_k=int(config.get("regression_top_k", 5)),
+                pca_dim=int(config.get("pca_dim", 64)),
+                text_projector=projector,
+                fit_projector=False,
+                random_state=seed,
+                include_hierarchy_features=bool(config.get("use_hierarchy_features", True)),
+            )
+            write_parquet(train_features, paths.run_dir / "train_regression_features.parquet")
+            write_parquet(dev_features, paths.run_dir / "dev_regression_features.parquet")
+            artifacts = train_lgbm_quantile_regressor(
+                train_frame=train_features,
+                dev_frame=dev_features,
+                output_dir=regressor_dir,
+                quantiles=tuple(config.get("quantiles", [0.1, 0.5, 0.9])),
+                top_k=int(config.get("regression_top_k", 5)),
+                pca_dim=int(config.get("pca_dim", 64)),
+                seed=seed,
+                text_projector=projector,
+                use_hierarchy_features=bool(config.get("use_hierarchy_features", True)),
+            )
+            bundle = load_regression_bundle(artifacts.bundle_path)
         reg_output = paths.run_dir / "regression_preds_test_lgbm_regressor.parquet"
-        write_parquet(reg_preds, reg_output)
+        if reg_output.exists():
+            reg_preds = pd.read_parquet(reg_output)
+        else:
+            reg_preds = predict_with_regression_bundle(selected_runs["test"], test, epa, bundle)
+            write_parquet(reg_preds, reg_output)
+        reg_output = paths.run_dir / "regression_preds_test_lgbm_regressor.parquet"
         eval_frame = reg_preds.dropna(subset=["y_true", "pred_factor_value"])
         if not eval_frame.empty:
             dump_json(

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from collections import deque
 from dataclasses import dataclass
 from pathlib import Path
@@ -32,6 +33,11 @@ if TYPE_CHECKING:
 
 REQUIRED_PRODUCT_COLUMNS = ["product_id", "text", "gold_naics_code"]
 REQUIRED_CORPUS_COLUMNS = ["naics_code", "naics_text"]
+
+
+def _default_num_workers() -> int:
+    cpu_count = os.cpu_count() or 1
+    return max(2, min(8, cpu_count // 2))
 
 
 @dataclass(frozen=True)
@@ -203,7 +209,15 @@ def train_dense_model(
     model = SentenceTransformer(encoder_name, device=resolved_device)
     model.max_seq_length = int(max_length)
     train_examples = build_input_examples(train_pairs)
-    train_loader = DataLoader(train_examples, batch_size=batch_size, shuffle=False)
+    dataloader_num_workers = _default_num_workers()
+    train_loader = DataLoader(
+        train_examples,
+        batch_size=batch_size,
+        shuffle=False,
+        num_workers=dataloader_num_workers,
+        pin_memory=resolved_device.startswith("cuda"),
+        persistent_workers=dataloader_num_workers > 0,
+    )
     train_loss = MultipleNegativesRankingLoss(model)
 
     warmup_steps = max(0, int(len(train_loader) * 0.1))
@@ -217,6 +231,7 @@ def train_dense_model(
                     "train_pairs": len(train_pairs),
                     "epochs": epochs,
                     "batch_size": batch_size,
+                    "dataloader_num_workers": dataloader_num_workers,
                     "warmup_steps": warmup_steps,
                 }
             },

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Protocol
@@ -30,6 +31,11 @@ except ImportError as exc:  # pragma: no cover
 else:
     _RERANK_IMPORT_ERROR = None
 
+try:
+    import torch
+except ImportError:  # pragma: no cover
+    torch = None
+
 if TYPE_CHECKING:
     from logging import Logger
 
@@ -56,6 +62,48 @@ class RerankerArtifacts:
     dev_pair_scores_path: Path
     train_pair_count: int
     dev_pair_count: int
+
+
+def _default_num_workers() -> int:
+    cpu_count = os.cpu_count() or 1
+    return max(2, min(8, cpu_count // 2))
+
+
+def _is_cuda_device(device: str) -> bool:
+    return device.startswith("cuda")
+
+
+def _resolve_precision_flags(resolved_device: str) -> tuple[bool, bool, bool]:
+    if torch is None or not _is_cuda_device(resolved_device):
+        return False, False, False
+    bf16_supported = bool(getattr(torch.cuda, "is_bf16_supported", lambda: False)())
+    bf16 = bf16_supported
+    fp16 = not bf16
+    tf32 = True
+    return fp16, bf16, tf32
+
+
+def _resolve_train_batch_size(batch_size: int, resolved_device: str) -> int:
+    if not _is_cuda_device(resolved_device):
+        return batch_size
+    return max(batch_size, min(128, batch_size * 8))
+
+
+def _resolve_eval_batch_size(train_batch_size: int, resolved_device: str) -> int:
+    if not _is_cuda_device(resolved_device):
+        return train_batch_size
+    return max(train_batch_size, min(256, train_batch_size * 2))
+
+
+def _enable_cuda_speedups(resolved_device: str, tf32: bool) -> None:
+    if torch is None or not _is_cuda_device(resolved_device):
+        return
+    if tf32:
+        torch.backends.cuda.matmul.allow_tf32 = True
+        torch.backends.cudnn.allow_tf32 = True
+        if hasattr(torch, "set_float32_matmul_precision"):
+            torch.set_float32_matmul_precision("high")
+    torch.backends.cudnn.benchmark = True
 
 
 def validate_reranker_pair_frame(frame: pd.DataFrame, frame_name: str) -> None:
@@ -269,14 +317,39 @@ def train_cross_encoder_reranker(
     checkpoint_dir = output_root / "checkpoints"
     ensure_directory(checkpoint_dir)
     resolved_device = resolve_torch_device(device)
+    train_batch_size = _resolve_train_batch_size(batch_size, resolved_device)
+    eval_batch_size = _resolve_eval_batch_size(train_batch_size, resolved_device)
+    fp16, bf16, tf32 = _resolve_precision_flags(resolved_device)
+    dataloader_num_workers = _default_num_workers()
+    dataloader_prefetch_factor = None if dataloader_num_workers == 0 else 4
+    auto_find_batch_size = _is_cuda_device(resolved_device)
+    _enable_cuda_speedups(resolved_device, tf32)
     model = CrossEncoder(base_model, num_labels=1, max_length=max_length, device=resolved_device)
     train_dataset = _build_trainer_dataset(train_pairs)
-    steps_per_epoch = max(1, (len(train_pairs) + batch_size - 1) // batch_size)
+    steps_per_epoch = max(1, (len(train_pairs) + train_batch_size - 1) // train_batch_size)
     warmup_steps = max(0, int(steps_per_epoch * epochs * 0.1))
     epoch_metrics_history: list[dict[str, float | int]] = []
+    if logger is not None:
+        logger.info(
+            "reranker_training_config",
+            extra={
+                "structured": {
+                    "device": resolved_device,
+                    "requested_batch_size": batch_size,
+                    "train_batch_size": train_batch_size,
+                    "eval_batch_size": eval_batch_size,
+                    "fp16": fp16,
+                    "bf16": bf16,
+                    "tf32": tf32,
+                    "auto_find_batch_size": auto_find_batch_size,
+                    "dataloader_num_workers": dataloader_num_workers,
+                }
+            },
+        )
     training_args = CrossEncoderTrainingArguments(
         output_dir=str(checkpoint_dir),
-        per_device_train_batch_size=batch_size,
+        per_device_train_batch_size=train_batch_size,
+        per_device_eval_batch_size=eval_batch_size,
         num_train_epochs=epochs,
         learning_rate=learning_rate,
         save_strategy="steps",
@@ -288,7 +361,14 @@ def train_cross_encoder_reranker(
         disable_tqdm=False,
         max_grad_norm=1.0,
         warmup_steps=warmup_steps,
-        dataloader_num_workers=0,
+        fp16=fp16,
+        bf16=bf16,
+        tf32=tf32,
+        auto_find_batch_size=auto_find_batch_size,
+        dataloader_num_workers=dataloader_num_workers,
+        dataloader_pin_memory=True,
+        dataloader_persistent_workers=dataloader_num_workers > 0,
+        dataloader_prefetch_factor=dataloader_prefetch_factor,
         report_to=[],
     )
     callbacks = [
@@ -297,7 +377,7 @@ def train_cross_encoder_reranker(
             dev_pairs=dev_pairs,
             epoch_metrics_history=epoch_metrics_history,
             top_k=top_k,
-            batch_size=batch_size,
+            batch_size=eval_batch_size,
             logger=logger,
         )
     ]
@@ -319,7 +399,7 @@ def train_cross_encoder_reranker(
     dev_inputs = dev_scored[["query_text", "candidate_text"]].astype(str).values.tolist()
     dev_scored["rerank_score"] = model.predict(
         dev_inputs,
-        batch_size=batch_size,
+        batch_size=eval_batch_size,
         show_progress_bar=True,
         convert_to_numpy=True,
     )
@@ -332,6 +412,14 @@ def train_cross_encoder_reranker(
             "positive_rate_train": float(train_pairs["label"].mean()),
             "positive_rate_dev": float(dev_pairs["label"].mean()),
             "device": resolved_device,
+            "requested_batch_size": int(batch_size),
+            "effective_train_batch_size": int(getattr(trainer, "_train_batch_size", train_batch_size)),
+            "eval_batch_size": int(eval_batch_size),
+            "fp16": fp16,
+            "bf16": bf16,
+            "tf32": tf32,
+            "auto_find_batch_size": auto_find_batch_size,
+            "dataloader_num_workers": int(dataloader_num_workers),
             "checkpoint_dir": str(checkpoint_dir),
             "checkpoint_save_steps": int(checkpoint_save_steps),
             "checkpoint_save_total_limit": int(checkpoint_save_total_limit),
