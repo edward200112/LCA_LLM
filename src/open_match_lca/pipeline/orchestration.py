@@ -11,7 +11,7 @@ import yaml
 from open_match_lca.eval.eval_regression import compute_regression_metrics
 from open_match_lca.eval.eval_retrieval import compute_retrieval_metrics
 from open_match_lca.eval.eval_uncertainty import evaluate_uncertainty
-from open_match_lca.io_utils import dump_json, ensure_directory, load_yaml, require_exists, write_jsonl, write_parquet
+from open_match_lca.io_utils import dump_json, ensure_directory, load_yaml, read_jsonl, require_exists, write_jsonl, write_parquet
 from open_match_lca.regression.baseline_factor_lookup import (
     build_factor_lookup as build_factor_lookup_simple,
     top1_factor_lookup_predictions,
@@ -186,6 +186,15 @@ def _has_materialized_directory(path: Path) -> bool:
     return path.exists() and path.is_dir() and any(path.iterdir())
 
 
+def _resolve_optional_materialized_dir(path_value: Any) -> Path | None:
+    if not path_value:
+        return None
+    path = Path(str(path_value))
+    if not _has_materialized_directory(path):
+        raise FileNotFoundError(f"Configured reusable artifact directory is missing or empty: {path}")
+    return path
+
+
 def run_pipeline(config: dict[str, Any], seed: int, output_dir: str | Path, dry_run: bool = False) -> dict[str, Any]:
     paths = resolve_pipeline_paths(config, output_dir, seed)
     manifest = build_pipeline_manifest(config, seed, output_dir)
@@ -203,6 +212,8 @@ def run_pipeline(config: dict[str, Any], seed: int, output_dir: str | Path, dry_
     batch_size = int(config.get("batch_size", 8))
     dense_encoder_name = str(config.get("dense_encoder_name", "all-MiniLM-L6-v2"))
     rerank_base_model = str(config.get("rerank_base_model", "cross-encoder/ms-marco-MiniLM-L-6-v2"))
+    reusable_dense_model_dir = _resolve_optional_materialized_dir(config.get("dense_model_dir"))
+    reusable_reranker_model_dir = _resolve_optional_materialized_dir(config.get("reranker_model_dir"))
     retrieval_mode = str(config.get("retrieval_mode", "hybrid"))
     device = config.get("device")
 
@@ -220,8 +231,8 @@ def run_pipeline(config: dict[str, Any], seed: int, output_dir: str | Path, dry_
                 write_jsonl(bm25_runs[split_name], output_path)
 
     if retrieval_mode in {"dense", "hybrid"}:
-        dense_model_dir = paths.run_dir / "dense_training" / "dense_model"
-        if not _has_materialized_directory(dense_model_dir):
+        dense_model_dir = reusable_dense_model_dir or (paths.run_dir / "dense_training" / "dense_model")
+        if reusable_dense_model_dir is None and not _has_materialized_directory(dense_model_dir):
             dense_artifacts = train_dense_model(
                 train_products=train,
                 dev_products=dev,
@@ -272,8 +283,8 @@ def run_pipeline(config: dict[str, Any], seed: int, output_dir: str | Path, dry_
     if bool(config.get("whether_rerank", False)):
         train_pairs = build_reranker_pairs_from_run(selected_runs["train"], corpus, top_k=top_k)
         dev_pairs = build_reranker_pairs_from_run(selected_runs["dev"], corpus, top_k=top_k)
-        reranker_model_dir = paths.run_dir / "reranker" / "reranker_model"
-        if not _has_materialized_directory(reranker_model_dir):
+        reranker_model_dir = reusable_reranker_model_dir or (paths.run_dir / "reranker" / "reranker_model")
+        if reusable_reranker_model_dir is None and not _has_materialized_directory(reranker_model_dir):
             rerank_artifacts = train_cross_encoder_reranker(
                 train_pairs=train_pairs,
                 dev_pairs=dev_pairs,
@@ -284,6 +295,8 @@ def run_pipeline(config: dict[str, Any], seed: int, output_dir: str | Path, dry_
                 learning_rate=float(config.get("learning_rate", 2e-5)),
                 max_length=int(config.get("max_length", 256)),
                 top_k=int(config.get("rerank_top_k", top_k)),
+                checkpoint_save_steps=int(config.get("checkpoint_save_steps", 300)),
+                checkpoint_save_total_limit=int(config.get("checkpoint_save_total_limit", 2)),
                 device=device,
             )
             reranker_model_dir = rerank_artifacts.model_dir

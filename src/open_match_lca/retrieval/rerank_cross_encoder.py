@@ -329,6 +329,7 @@ def train_cross_encoder_reranker(
     steps_per_epoch = max(1, (len(train_pairs) + train_batch_size - 1) // train_batch_size)
     warmup_steps = max(0, int(steps_per_epoch * epochs * 0.1))
     epoch_metrics_history: list[dict[str, float | int]] = []
+    save_strategy = "no" if checkpoint_save_steps <= 0 else "steps"
     if logger is not None:
         logger.info(
             "reranker_training_config",
@@ -343,20 +344,20 @@ def train_cross_encoder_reranker(
                     "tf32": tf32,
                     "auto_find_batch_size": auto_find_batch_size,
                     "dataloader_num_workers": dataloader_num_workers,
+                    "save_strategy": save_strategy,
+                    "checkpoint_save_steps": checkpoint_save_steps,
                 }
             },
         )
-    training_args = CrossEncoderTrainingArguments(
+    training_arg_kwargs = dict(
         output_dir=str(checkpoint_dir),
         per_device_train_batch_size=train_batch_size,
         per_device_eval_batch_size=eval_batch_size,
         num_train_epochs=epochs,
         learning_rate=learning_rate,
-        save_strategy="steps",
-        save_steps=checkpoint_save_steps,
-        save_total_limit=checkpoint_save_total_limit,
+        save_strategy=save_strategy,
         logging_strategy="steps",
-        logging_steps=max(1, min(50, checkpoint_save_steps)),
+        logging_steps=max(1, min(50, checkpoint_save_steps if checkpoint_save_steps > 0 else 50)),
         eval_strategy="no",
         disable_tqdm=False,
         max_grad_norm=1.0,
@@ -371,6 +372,10 @@ def train_cross_encoder_reranker(
         dataloader_prefetch_factor=dataloader_prefetch_factor,
         report_to=[],
     )
+    if save_strategy != "no":
+        training_arg_kwargs["save_steps"] = checkpoint_save_steps
+        training_arg_kwargs["save_total_limit"] = checkpoint_save_total_limit
+    training_args = CrossEncoderTrainingArguments(**training_arg_kwargs)
     callbacks = [
         EpochMetricsCallback(
             cross_encoder=model,
