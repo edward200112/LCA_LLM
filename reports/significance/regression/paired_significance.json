@@ -1,0 +1,43 @@
+{
+  "rows": [
+    {
+      "metric": "mae",
+      "primary_model": "hybrid_with_rerank",
+      "baseline_model": "hybrid_no_rerank",
+      "n": 1,
+      "mean_primary": 0.13597562409698166,
+      "std_primary": 0.0,
+      "mean_baseline": 0.15311510828047864,
+      "std_baseline": 0.0,
+      "mean_difference": -0.017139484183496978,
+      "paired_t_pvalue": null,
+      "wilcoxon_pvalue": null
+    },
+    {
+      "metric": "rmse",
+      "primary_model": "hybrid_with_rerank",
+      "baseline_model": "hybrid_no_rerank",
+      "n": 1,
+      "mean_primary": 0.24196727775905622,
+      "std_primary": 0.0,
+      "mean_baseline": 0.2538293193553852,
+      "std_baseline": 0.0,
+      "mean_difference": -0.011862041596329004,
+      "paired_t_pvalue": null,
+      "wilcoxon_pvalue": null
+    },
+    {
+      "metric": "spearman",
+      "primary_model": "hybrid_with_rerank",
+      "baseline_model": "hybrid_no_rerank",
+      "n": 1,
+      "mean_primary": 0.7376592351002222,
+      "std_primary": 0.0,
+      "mean_baseline": 0.6887316871454904,
+      "std_baseline": 0.0,
+      "mean_difference": 0.048927547954731865,
+      "paired_t_pvalue": null,
+      "wilcoxon_pvalue": null
+    }
+  ]
+}

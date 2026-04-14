@@ -38,3 +38,25 @@ models/**
 !models/
 !models/retriever/
 !models/retriever/download.py
+
+# exclude models and oversized artifacts for GitHub push
+checkpoints/**
+data/predictions/**/checkpoints/**
+**/dense_model/**
+**/reranker_model/**
+**/*.safetensors
+**/optimizer.pt
+
+# oversized retrieval artifacts
+data/predictions/random_stratified/dense_reranked_train_ckpt20090/retrieval_topk_random_stratified_train_reranked.jsonl
+data/predictions/random_stratified/reranker_prep/retrieval_topk_train_dense_finetuned.jsonl
+reports/ablation_main/**/retrieval_topk_train_bm25.jsonl
+reports/ablation_main_clean/bm25_only/**/retrieval_topk_train_bm25.jsonl
+reports/ablation_main_clean/dense_only/**/retrieval_topk_train_dense_finetuned.jsonl
+reports/ablation_main_clean/hybrid_no_rerank/**/retrieval_topk_train_bm25.jsonl
+reports/ablation_main_clean/hybrid_no_rerank/**/retrieval_topk_train_dense_finetuned.jsonl
+reports/ablation_main_clean/hybrid_no_rerank/**/retrieval_topk_train_hybrid.jsonl
+reports/ablation_main_clean/hybrid_with_rerank/**/retrieval_topk_train_bm25.jsonl
+reports/ablation_main_clean/hybrid_with_rerank/**/retrieval_topk_train_dense_finetuned.jsonl
+reports/ablation_main_clean/hybrid_with_rerank/**/retrieval_topk_train_hybrid.jsonl
+reports/ablation_main_clean/hybrid_with_rerank/**/retrieval_topk_train_hybrid_reranked.jsonl

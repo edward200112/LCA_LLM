@@ -1,0 +1,4 @@
+metric,primary_model,baseline_model,n,mean_primary,std_primary,mean_baseline,std_baseline,mean_difference,paired_t_pvalue,wilcoxon_pvalue
+mae,hybrid_with_rerank,hybrid_no_rerank,1,0.13597562409698166,0.0,0.15311510828047864,0.0,-0.017139484183496978,,
+rmse,hybrid_with_rerank,hybrid_no_rerank,1,0.24196727775905622,0.0,0.2538293193553852,0.0,-0.011862041596329004,,
+spearman,hybrid_with_rerank,hybrid_no_rerank,1,0.7376592351002222,0.0,0.6887316871454904,0.0,0.048927547954731865,,

@@ -1,0 +1,12 @@
+{
+  "retrieval_rows": 8576,
+  "retrieval_slice_rows": 10,
+  "regression_slice_rows": 10,
+  "exported_cases": {
+    "topk_recoverable_cases": 200,
+    "hier2_correct_6_wrong_cases": 200,
+    "reranker_fixed_cases": 200,
+    "abstained_high_risk_cases": 200,
+    "regressor_improvement_cases": 200
+  }
+}

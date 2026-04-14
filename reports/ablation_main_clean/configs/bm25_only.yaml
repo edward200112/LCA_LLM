@@ -1,0 +1,45 @@
+name: full_experiment
+seed: 13
+seeds:
+- 13
+- 42
+- 3407
+model_name: models/retriever/multilingual-e5-base
+dense_encoder_name: models/retriever/multilingual-e5-base
+retrieval_mode: bm25
+split_type: random_stratified
+splits_dir: /LCA_LLM/data/splits_clean
+processed_dir: data/processed
+corpus_path: data/processed/naics_corpus.parquet
+process_retriever: bm25
+process_top_k: 10
+process_prefilter_by_naics: false
+rerank_base_model: models/reranker/ms-marco-MiniLM-L6-v2
+batch_size: 256
+max_length: 256
+learning_rate: 2.0e-05
+epochs: 1
+top_k: 50
+device: cuda
+whether_rerank: false
+whether_regression: false
+whether_process_extension: false
+whether_uncertainty: true
+use_hierarchy_features: true
+rerank_top_k: 10
+epa_factors_path: data/processed/epa_factors.parquet
+factor_baselines:
+- top1_factor_lookup
+- topk_factor_mixture
+regression_top_k: 10
+pca_dim: 64
+quantiles:
+- 0.1
+- 0.5
+- 0.9
+smoke_test: false
+dense_model_dir: /LCA_LLM/reports/ablation_main_clean/dense_only/seed_13/dense_training/dense_model
+reranker_model_dir: /LCA_LLM/data/predictions/reranker/checkpoints/checkpoint-20090
+checkpoint_save_steps: 0
+checkpoint_save_total_limit: 0
+ablation_name: bm25_only

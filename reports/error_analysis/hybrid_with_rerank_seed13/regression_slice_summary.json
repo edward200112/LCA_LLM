@@ -1,0 +1,84 @@
+{
+  "rows": [
+    {
+      "slice_name": "text_length_slice",
+      "slice_value": "short",
+      "n": 4321,
+      "mae": 0.13608562169543284,
+      "confidence": 0.5161074073571215,
+      "retained": 0.5098356861837537
+    },
+    {
+      "slice_name": "text_length_slice",
+      "slice_value": "long",
+      "n": 4255,
+      "mae": 0.13586271336939057,
+      "confidence": 0.5124151586052648,
+      "retained": 0.4874265569917744
+    },
+    {
+      "slice_name": "has_brand_like_token",
+      "slice_value": 0,
+      "n": 920,
+      "mae": 0.1415693029249718,
+      "confidence": 0.5187973665532364,
+      "retained": 0.5358695652173913
+    },
+    {
+      "slice_name": "has_brand_like_token",
+      "slice_value": 1,
+      "n": 7656,
+      "mae": 0.1352902806708954,
+      "confidence": 0.5137321094339794,
+      "retained": 0.4942528735632184
+    },
+    {
+      "slice_name": "has_spec_terms",
+      "slice_value": 0,
+      "n": 5252,
+      "mae": 0.12813399525144933,
+      "confidence": 0.5276562337406792,
+      "retained": 0.5466488956587966
+    },
+    {
+      "slice_name": "has_spec_terms",
+      "slice_value": 1,
+      "n": 3324,
+      "mae": 0.1484739892186431,
+      "confidence": 0.49313359429887993,
+      "retained": 0.4229843561973526
+    },
+    {
+      "slice_name": "has_digit_heuristic",
+      "slice_value": 0,
+      "n": 1171,
+      "mae": 0.12674469417642445,
+      "confidence": 0.5352878942092333,
+      "retained": 0.5636208368915457
+    },
+    {
+      "slice_name": "has_digit_heuristic",
+      "slice_value": 1,
+      "n": 7405,
+      "mae": 0.13745428351567546,
+      "confidence": 0.5109526648124931,
+      "retained": 0.4884537474679271
+    },
+    {
+      "slice_name": "naics_frequency_slice",
+      "slice_value": "head",
+      "n": 6774,
+      "mae": 0.11506725373480972,
+      "confidence": 0.5263186077922418,
+      "retained": 0.5312961322704458
+    },
+    {
+      "slice_name": "naics_frequency_slice",
+      "slice_value": "tail",
+      "n": 171,
+      "mae": 0.3579466910245729,
+      "confidence": 0.4074248904162587,
+      "retained": 0.2807017543859649
+    }
+  ]
+}

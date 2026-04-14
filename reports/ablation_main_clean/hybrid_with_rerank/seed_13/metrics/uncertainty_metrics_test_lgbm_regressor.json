@@ -1,0 +1,10 @@
+{
+  "empirical_coverage": 0.7705223880597015,
+  "average_interval_width": 0.42165561374947885,
+  "calibration_error": 0.1980942717431244,
+  "retained_coverage": 0.49871735074626866,
+  "retained_risk": 0.07602627305932408,
+  "abstention_gain": 0.05994935103765758,
+  "best_curve_gain@50": 0.059911184920681926,
+  "aurc": 0.07231744543742061
+}

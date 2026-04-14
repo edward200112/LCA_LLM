@@ -1,0 +1,18 @@
+{
+  "train_pairs": 1284600,
+  "dev_pairs": 428950,
+  "positive_rate_train": 0.01857932430328507,
+  "positive_rate_dev": 0.01710455764075067,
+  "device": "cuda",
+  "requested_batch_size": 32,
+  "effective_train_batch_size": 128,
+  "eval_batch_size": 256,
+  "fp16": false,
+  "bf16": true,
+  "tf32": true,
+  "auto_find_batch_size": true,
+  "dataloader_num_workers": 8,
+  "checkpoint_dir": "/LCA_LLM/reports/ablation_main_clean/hybrid_with_rerank/seed_13/reranker/checkpoints",
+  "checkpoint_save_steps": 300,
+  "checkpoint_save_total_limit": 2
+}

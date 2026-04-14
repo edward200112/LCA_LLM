@@ -1,0 +1,49 @@
+{
+  "seed": 13,
+  "output_dir": "/LCA_LLM/reports/ablation_main/hybrid_with_rerank/seed_13",
+  "ablation_name": "hybrid_with_rerank",
+  "steps": [
+    {
+      "name": "load_splits",
+      "train": "data/splits/random_stratified_train.parquet",
+      "dev": "data/splits/random_stratified_dev.parquet",
+      "test": "data/splits/random_stratified_test.parquet"
+    },
+    {
+      "name": "bm25_baseline",
+      "enabled": true
+    },
+    {
+      "name": "dense_retrieval",
+      "enabled": true
+    },
+    {
+      "name": "hybrid_rrf",
+      "enabled": true
+    },
+    {
+      "name": "reranker",
+      "enabled": true
+    },
+    {
+      "name": "factor_baselines",
+      "enabled": true,
+      "models": [
+        "top1_factor_lookup",
+        "topk_factor_mixture"
+      ]
+    },
+    {
+      "name": "regressor",
+      "enabled": true
+    },
+    {
+      "name": "uncertainty",
+      "enabled": true
+    },
+    {
+      "name": "process_extension",
+      "enabled": false
+    }
+  ]
+}

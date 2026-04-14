@@ -1,0 +1,46 @@
+{
+  "rows": [
+    {
+      "model": "hybrid_no_rerank",
+      "metric": "mae",
+      "n": 1,
+      "mean": 0.15311510828047864,
+      "std": 0.0
+    },
+    {
+      "model": "hybrid_no_rerank",
+      "metric": "rmse",
+      "n": 1,
+      "mean": 0.2538293193553852,
+      "std": 0.0
+    },
+    {
+      "model": "hybrid_no_rerank",
+      "metric": "spearman",
+      "n": 1,
+      "mean": 0.6887316871454904,
+      "std": 0.0
+    },
+    {
+      "model": "hybrid_with_rerank",
+      "metric": "mae",
+      "n": 1,
+      "mean": 0.13597562409698166,
+      "std": 0.0
+    },
+    {
+      "model": "hybrid_with_rerank",
+      "metric": "rmse",
+      "n": 1,
+      "mean": 0.24196727775905622,
+      "std": 0.0
+    },
+    {
+      "model": "hybrid_with_rerank",
+      "metric": "spearman",
+      "n": 1,
+      "mean": 0.7376592351002222,
+      "std": 0.0
+    }
+  ]
+}

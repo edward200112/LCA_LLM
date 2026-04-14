@@ -1,0 +1,14 @@
+{
+  "top1_accuracy": 0.17915841007110386,
+  "recall@5": 0.5237207133698566,
+  "recall@10": 0.6797995104324513,
+  "mrr@10": 0.32083483663504675,
+  "ndcg@10": 0.4058434042851862,
+  "hierarchical_accuracy@2": 0.7559156078797062,
+  "hierarchical_accuracy@4": 0.4219606014687026,
+  "hierarchical_accuracy@6": 0.17915841007110386,
+  "train_pairs": 25692,
+  "train_unique_labels": 504,
+  "hard_negative_buckets": 103,
+  "device": "cuda"
+}

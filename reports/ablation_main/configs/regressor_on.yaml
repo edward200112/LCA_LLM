@@ -1,0 +1,41 @@
+name: full_experiment
+seed: 13
+seeds:
+- 13
+- 42
+- 3407
+model_name: models/retriever/multilingual-e5-base
+dense_encoder_name: models/retriever/multilingual-e5-base
+retrieval_mode: hybrid
+split_type: random_stratified
+splits_dir: data/splits
+processed_dir: data/processed
+corpus_path: data/processed/naics_corpus.parquet
+process_retriever: bm25
+process_top_k: 10
+process_prefilter_by_naics: false
+rerank_base_model: models/reranker/ms-marco-MiniLM-L6-v2
+batch_size: 32
+max_length: 256
+learning_rate: 2.0e-05
+epochs: 3
+top_k: 50
+device: auto
+whether_rerank: true
+whether_regression: true
+whether_process_extension: false
+whether_uncertainty: true
+use_hierarchy_features: true
+rerank_top_k: 10
+epa_factors_path: data/processed/epa_factors.parquet
+factor_baselines:
+- top1_factor_lookup
+- topk_factor_mixture
+regression_top_k: 10
+pca_dim: 64
+quantiles:
+- 0.1
+- 0.5
+- 0.9
+smoke_test: false
+ablation_name: regressor_on
