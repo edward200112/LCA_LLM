@@ -14,6 +14,8 @@ build/
 !data/raw/.gitkeep
 data/interim/**
 !data/interim/.gitkeep
+!data/interim/aux_documents.csv
+!data/interim/aux_samples_for_labeling.csv
 data/processed/**
 !data/processed/.gitkeep
 # data/splits/**

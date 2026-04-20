@@ -1,0 +1,13 @@
+doc_id,file_name,relative_path,doc_type,category_level_1,material_or_product,manufacturer,source_url,notes
+glass_0001,AGC 4 mm Low-Carbon Planibel Clearlite.pdf,data/Glass_EPD/AGC 4 mm Low-Carbon Planibel Clearlite.pdf,epd,glass,clearlite_glass,AGC,,
+glass_0002,EPD document S-P-08821 en.pdf,data/Glass_EPD/EPD document S-P-08821 en.pdf,epd,glass,glass,,,
+glass_0003,EPD document S-P-08822 en.pdf,data/Glass_EPD/EPD document S-P-08822 en.pdf,epd,glass,glass,,,
+glass_0004,EPD document S-P-08825 en.pdf,data/Glass_EPD/EPD document S-P-08825 en.pdf,epd,glass,glass,,,
+glass_0005,EPD document S-P-11498 en.pdf,data/Glass_EPD/EPD document S-P-11498 en.pdf,epd,glass,glass,,,
+glass_0006,Pilkington Thermally Toughened Offline Coated Low-iron Float Glass.pdf,data/Glass_EPD/Pilkington Thermally Toughened Offline Coated Low-iron Float Glass.pdf,epd,glass,low_iron_float_glass,Pilkington,,
+glass_0007,Pilkington_Float_Glass.pdf,data/Glass_EPD/Pilkington_Float_Glass.pdf,epd,glass,float_glass,Pilkington,,
+glass_0008,Pilkington_Low_iron_Float_Glass.pdf,data/Glass_EPD/Pilkington_Low_iron_Float_Glass.pdf,epd,glass,low_iron_float_glass,Pilkington,,
+glass_0009,Pilkington_Patterned_Glass2.pdf,data/Glass_EPD/Pilkington_Patterned_Glass2.pdf,epd,glass,patterned_glass,Pilkington,,
+glass_0010,Pilkington_Thermally_Toughened_Float_Glass.pdf,data/Glass_EPD/Pilkington_Thermally_Toughened_Float_Glass.pdf,epd,glass,thermally_toughened_float_glass,Pilkington,,
+glass_0011,Sisecam_Patterned_Glass.pdf,data/Glass_EPD/Sisecam_Patterned_Glass.pdf,epd,glass,patterned_glass,Sisecam,,
+glass_0012,Sisecam_Solar_Glass.pdf,data/Glass_EPD/Sisecam_Solar_Glass.pdf,epd,glass,solar_glass,Sisecam,,

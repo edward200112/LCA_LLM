@@ -1,0 +1,3 @@
+doc_id,file_name,relative_path,doc_type,category_level_1,material_or_product,manufacturer,source_url,notes
+coal_0001,QGESSDetailedCoalSpecifications_010112.pdf,data/Coal_EPD/coal_specs/QGESSDetailedCoalSpecifications_010112.pdf,spec,fuel,coal,,,
+coal_0002,ds975.pdf,data/Coal_EPD/unknown/ds975.pdf,other,fuel,coal,,,

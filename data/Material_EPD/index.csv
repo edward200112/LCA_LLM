@@ -1,0 +1,16 @@
+doc_id,file_name,relative_path,doc_type,category_level_1,material_or_product,manufacturer,source_url,notes
+mat_0001,df_3015_2026pdf.pdf,data/Material_EPD/dolomite/df_3015_2026pdf.pdf,other,raw_material,dolomite,,,
+mat_0002,gs-2005_2026pdf.pdf,data/Material_EPD/dolomite/gs-2005_2026pdf.pdf,other,raw_material,dolomite,,,
+mat_0003,is.9749.2007.pdf,data/Material_EPD/feldspar/is.9749.2007.pdf,standard,raw_material,feldspar,,,
+mat_0004,EPD document EPD-IES-0024953_003 en copy.pdf,data/Material_EPD/limestone/EPD document EPD-IES-0024953_003 en copy.pdf,epd,raw_material,limestone,,,
+mat_0005,EPD document EPD-IES-0024953_003 en duplicate top-level.pdf,data/Material_EPD/limestone/EPD document EPD-IES-0024953_003 en duplicate top-level.pdf,epd,raw_material,limestone,,,Top-level duplicate preserved during directory normalization.
+mat_0006,EPD document EPD-IES-0024953_003 en.pdf,data/Material_EPD/limestone/EPD document EPD-IES-0024953_003 en.pdf,epd,raw_material,limestone,,,
+mat_0007,EPD document S-P-12716 en duplicate top-level.pdf,data/Material_EPD/silica_sand/EPD document S-P-12716 en duplicate top-level.pdf,epd,raw_material,silica_sand,,,Top-level duplicate preserved during directory normalization.
+mat_0008,EPD document S-P-12716 en.pdf,data/Material_EPD/silica_sand/EPD document S-P-12716 en.pdf,epd,raw_material,silica_sand,,,
+mat_0009,EPD document_EPD-IES-0028701_002_en.pdf,data/Material_EPD/silica_sand/EPD document_EPD-IES-0028701_002_en.pdf,epd,raw_material,silica_sand,,,
+mat_0010,EPD document_EPD-IES-0030293_001_en duplicate top-level.pdf,data/Material_EPD/silica_sand/EPD document_EPD-IES-0030293_001_en duplicate top-level.pdf,epd,raw_material,silica_sand,,,Top-level duplicate preserved during directory normalization.
+mat_0011,EPD document_EPD-IES-0030293_001_en.pdf,data/Material_EPD/silica_sand/EPD document_EPD-IES-0030293_001_en.pdf,epd,raw_material,silica_sand,,,
+mat_0012,Dense_Ash_TCNA copy.pdf,data/Material_EPD/soda_ash/Dense_Ash_TCNA copy.pdf,other,raw_material,soda_ash,,,
+mat_0013,Dense_Ash_TCNA.pdf,data/Material_EPD/soda_ash/Dense_Ash_TCNA.pdf,other,raw_material,soda_ash,,,
+mat_0014,EPD document_EPD-IES-0025910_004_en.pdf,data/Material_EPD/unknown/EPD document_EPD-IES-0025910_004_en.pdf,epd,raw_material,unknown,,,
+mat_0015,EPD document_EPD-IES-0030299_001_en.pdf,data/Material_EPD/unknown/EPD document_EPD-IES-0030299_001_en.pdf,epd,raw_material,unknown,,,
