@@ -1,0 +1,1 @@
+{"@type":"FlowProperty","@id":"838aaa20-0117-11db-92e3-0800200c9a66","name":"Goods transport (mass*distance)","category":"Technical flow properties","version":"00.00.000","flowPropertyType":"PHYSICAL_QUANTITY","unitGroup":{"@type":"UnitGroup","@id":"838aaa21-0117-11db-92e3-0800200c9a66","name":"Units of mass*length","category":"Technical unit groups"}}
