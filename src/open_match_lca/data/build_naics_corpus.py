@@ -3,14 +3,19 @@ from __future__ import annotations
 import pandas as pd
 
 from open_match_lca.features.hierarchy_features import parent_code, split_naics_levels
-from open_match_lca.io_utils import read_tabular_dir
+from open_match_lca.io_utils import read_tabular_input
 from open_match_lca.schemas import ensure_columns, normalize_naics_code, validate_non_empty
 
 NAICS_INPUT_REQUIRED_COLUMNS = ["naics_code", "naics_title"]
+NAICS_PREFERRED_FILENAMES = [
+    "naics_from_caml.csv",
+    "naics_from_caml.parquet",
+    "naics_2017_enriched.csv",
+]
 
 
 def build_naics_corpus(naics_dir: str) -> pd.DataFrame:
-    frame = read_tabular_dir(naics_dir)
+    frame = read_tabular_input(naics_dir, preferred_filenames=NAICS_PREFERRED_FILENAMES)
     ensure_columns(frame, NAICS_INPUT_REQUIRED_COLUMNS, "naics")
     parsed = frame.copy()
     parsed["naics_code"] = parsed["naics_code"].map(normalize_naics_code)

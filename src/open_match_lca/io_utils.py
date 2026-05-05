@@ -71,19 +71,55 @@ def read_tabular_path(path: Path) -> pd.DataFrame:
     raise ValueError(f"Unsupported tabular file format: {path}")
 
 
-def read_tabular_dir(directory: str | Path) -> pd.DataFrame:
+def _list_supported_tabular_files(directory: Path) -> list[Path]:
+    return sorted(
+        path
+        for path in directory.iterdir()
+        if path.suffix.lower() in {".csv", ".parquet", ".json", ".jsonl"}
+    )
+
+
+def read_tabular_dir(
+    directory: str | Path,
+    *,
+    preferred_filenames: list[str] | tuple[str, ...] | None = None,
+    exclude_filenames: set[str] | list[str] | tuple[str, ...] | None = None,
+) -> pd.DataFrame:
     dir_path = require_exists(Path(directory))
     if not dir_path.is_dir():
         raise FileNotFoundError(f"Expected a directory, got: {dir_path}")
-    files = sorted(
-        path
-        for path in dir_path.iterdir()
-        if path.suffix.lower() in {".csv", ".parquet", ".json", ".jsonl"}
-    )
+    files = _list_supported_tabular_files(dir_path)
+    excluded = set(exclude_filenames or [])
+    if excluded:
+        files = [path for path in files if path.name not in excluded]
+    if preferred_filenames:
+        preferred = [
+            dir_path / filename
+            for filename in preferred_filenames
+            if (dir_path / filename).exists() and (dir_path / filename).suffix.lower() in {".csv", ".parquet", ".json", ".jsonl"}
+        ]
+        if preferred:
+            files = preferred
     if not files:
         raise FileNotFoundError(f"No supported input files found in: {dir_path}")
     frames = [read_tabular_path(path) for path in files]
     return pd.concat(frames, ignore_index=True)
+
+
+def read_tabular_input(
+    path_or_dir: str | Path,
+    *,
+    preferred_filenames: list[str] | tuple[str, ...] | None = None,
+    exclude_filenames: set[str] | list[str] | tuple[str, ...] | None = None,
+) -> pd.DataFrame:
+    input_path = require_exists(Path(path_or_dir))
+    if input_path.is_dir():
+        return read_tabular_dir(
+            input_path,
+            preferred_filenames=preferred_filenames,
+            exclude_filenames=exclude_filenames,
+        )
+    return read_tabular_path(input_path)
 
 
 def write_parquet(frame: pd.DataFrame, path: str | Path) -> None:

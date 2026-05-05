@@ -5,12 +5,13 @@ import ast
 import pandas as pd
 
 from open_match_lca.features.text_cleaning import compose_product_text, has_numeric_tokens
-from open_match_lca.io_utils import read_tabular_dir
+from open_match_lca.io_utils import read_tabular_input
 from open_match_lca.schemas import ensure_columns, normalize_naics_code, validate_non_empty
 
 AMAZON_INPUT_REQUIRED_COLUMNS = ["product_id", "title", "description", "gold_naics_code"]
 AMAZON_CAML_ALT_COLUMNS = ["product_code", "product_text", "naics_code"]
 AMAZON_INVALID_NAICS_CODES = {"000000", "000001"}
+AMAZON_EXTENSION_EXCLUDE_FILENAMES = {"pv_glass_cases.csv"}
 
 
 def _split_product_text(value: object) -> tuple[str, str]:
@@ -66,7 +67,7 @@ def _convert_alt_schema(frame: pd.DataFrame) -> pd.DataFrame:
 
 
 def parse_amazon_caml(amazon_dir: str) -> pd.DataFrame:
-    frame = read_tabular_dir(amazon_dir)
+    frame = read_tabular_input(amazon_dir, exclude_filenames=AMAZON_EXTENSION_EXCLUDE_FILENAMES)
     if all(column in frame.columns for column in AMAZON_INPUT_REQUIRED_COLUMNS):
         parsed = frame.copy()
     elif all(column in frame.columns for column in AMAZON_CAML_ALT_COLUMNS):

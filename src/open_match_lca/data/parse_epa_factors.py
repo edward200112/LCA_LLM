@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pandas as pd
 
-from open_match_lca.io_utils import read_tabular_dir
+from open_match_lca.io_utils import read_tabular_input
 from open_match_lca.schemas import ensure_columns, normalize_naics_code, validate_non_empty
 
 EPA_INPUT_REQUIRED_COLUMNS = [
@@ -15,13 +15,21 @@ EPA_INPUT_REQUIRED_COLUMNS = [
     "useeio_code",
 ]
 
+EPA_PREFERRED_FILENAMES = [
+    "epa_factors_from_caml.csv",
+    "epa_factors_from_caml.parquet",
+    "epa_naics_v13.csv",
+]
+
 
 def parse_epa_factors(epa_dir: str) -> pd.DataFrame:
-    frame = read_tabular_dir(epa_dir)
+    frame = read_tabular_input(epa_dir, preferred_filenames=EPA_PREFERRED_FILENAMES)
     ensure_columns(frame, EPA_INPUT_REQUIRED_COLUMNS, "epa_factors")
     parsed = frame.copy()
     parsed["naics_code"] = parsed["naics_code"].map(normalize_naics_code)
     parsed["factor_value"] = parsed["factor_value"].astype(float)
+    parsed["with_margins"] = parsed["with_margins"].astype(float)
+    parsed["without_margins"] = parsed["without_margins"].astype(float)
     parsed["source_year"] = parsed["source_year"].astype(int)
     validate_non_empty(parsed, "epa_factors")
     return parsed[EPA_INPUT_REQUIRED_COLUMNS]
